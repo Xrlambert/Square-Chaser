@@ -59,61 +59,73 @@ namespace WindowsFormsApp1
 
         private void timer_Tick(object sender, EventArgs e)
         {
-            SpeedMathSquareOne();
-            
+            //call math for square speed, using passed variables to allow for more than one square
+            SpeedMathSquare(GreenAccel1, Vert1, Hori1, friction1);
+            SpeedLimit();
 
             x1 += Hori1;
             y1 += Vert1;
             Invalidate();
         }
 
-        private void SpeedMathSquareOne()
+        private void SpeedMathSquare(float acelerate, float vertical, float horizontal, float friction)
         {
             //apply speed
-            if (UpDown) Vert1 -= GreenAccel1;
-            if (DownDown) Vert1 += GreenAccel1;
-            if (LeftDown) Hori1 -= GreenAccel1;
-            if (RightDown) Hori1 += GreenAccel1;
+            if (UpDown) vertical -= acelerate;
+            if (DownDown) vertical += acelerate;
+            if (LeftDown) horizontal -= acelerate;
+            if (RightDown) horizontal += acelerate;
 
             //apply friction
             if (!UpDown && !DownDown)
             {
-                if (Vert1 > 0)
+                if (vertical > 0)
                 {
-                    Vert1 -= friction1;
+                    vertical -= friction1;
                 }
-                if (Vert1 < 0)
+                if (vertical < 0)
                 {
-                    Vert1 += friction1;
+                    vertical += friction1;
                 }
                 //jitter/creep fix
-                if (Math.Abs(Vert1) < 0.1f)
-                    Vert1 = 0;
+                if (Math.Abs(vertical) < 0.1f)
+                    vertical = 0;
             }
             if (!LeftDown && !RightDown)
             {
-                if (Hori1 > 0)
+                if (horizontal > 0)
                 {
-                    Hori1 -= friction1;
+                    horizontal -= friction1;
                 }
-                if (Hori1 < 0)
+                if (horizontal < 0)
                 {
-                    Hori1 += friction1;
+                    horizontal += friction1;
                 }
 
                 //jitter/creep fix
-                if(Math.Abs(Hori1) < 0.1f)
-                    Hori1 = 0;
+                if(Math.Abs(horizontal) < 0.1f)
+                    horizontal = 0;
             }
 
-            //Limit top speed
+            //Bounce square off walls when square location is out of bounds
+            if (x1 < 15 || x1 > 1505) horizontal = -horizontal * 0.8f + 0.2f;
+            if (y1 < 15 || y1 > 805) vertical = -vertical * 0.8f + 0.2f;
+        }
+
+        private void SpeedLimit()
+        {
+            //Limit top speed (Having to use vector)
             if (Hori1 > GreenMaxHori1) Hori1 = GreenMaxHori1;
             if (Hori1 < -GreenMaxHori1) Hori1 = -GreenMaxHori1;
             if (Vert1 > GreenMaxVert1) Vert1 = GreenMaxVert1;
             if (Vert1 < -GreenMaxVert1) Vert1 = -GreenMaxVert1;
 
-            if (x1 < 15 || x1 > 1500) Hori1 = -Hori1;
-            if (y1 < 15 || y1 > 800) Vert1 = -Vert1;
+            if (Math.Sqrt(Hori1 * Hori1 + Vert1 * Vert1) > GreenMaxHori1)
+            {
+                float angle = (float)Math.Atan2(Vert1, Hori1);
+                Hori1 = GreenMaxHori1 * (float)Math.Cos(angle);
+                Vert1 = GreenMaxHori1 * (float)Math.Sin(angle);
+            }
         }
         private void Form1_KeyUp(object sender, KeyEventArgs e)
         {
