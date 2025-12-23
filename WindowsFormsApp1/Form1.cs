@@ -60,7 +60,7 @@ namespace WindowsFormsApp1
         private void timer_Tick(object sender, EventArgs e)
         {
             //call math for square speed, using passed variables to allow for more than one square
-            SpeedMathSquare(GreenAccel1, Vert1, Hori1, friction1);
+            SpeedMathSquare(GreenAccel1, ref Vert1, ref Hori1, friction1);
             SpeedLimit();
 
             x1 += Hori1;
@@ -68,7 +68,7 @@ namespace WindowsFormsApp1
             Invalidate();
         }
 
-        private void SpeedMathSquare(float acelerate, float vertical, float horizontal, float friction)
+        private void SpeedMathSquare(float acelerate, ref float vertical, ref float horizontal, float friction)
         {
             //apply speed
             if (UpDown) vertical -= acelerate;
@@ -108,8 +108,13 @@ namespace WindowsFormsApp1
             }
 
             //Bounce square off walls when square location is out of bounds
-            if (x1 < 15 || x1 > 1505) horizontal = -horizontal * 0.8f + 0.2f;
-            if (y1 < 15 || y1 > 805) vertical = -vertical * 0.8f + 0.2f;
+            if (x1 < 25) x1 = 25;
+            if (x1 > 1520) x1 = 1520;
+            if (y1 < 5) y1 = 5;
+            if (y1 > 790) y1 = 790;
+            if (x1 == 25 || x1 == 1520) horizontal = -horizontal * 0.8f;
+            if (y1 == 5 || y1 == 790) vertical = -vertical * 0.8f;
+            return;
         }
 
         private void SpeedLimit()
