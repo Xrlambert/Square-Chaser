@@ -1,4 +1,9 @@
-﻿using System;
+﻿//Xavier Lambert ISC3U
+//Square chaser project with semi realistic car movement as a test bed for final project while remaining separate utilising
+//custom physics engine with first education from example, made from scratch afterwards.
+
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -26,20 +31,20 @@ namespace WindowsFormsApp1
         float y2 = 30;
 
         //Accelleration
-        float accel1 = 0.2f;
-        float accel2 = 0.2f;
+        float GreenAccel1 = 0.2f;
+        float RedAccell2 = 0.2f;
 
         //Friction
         float friction1 = 0.09f;
         float friction2 = 0.09f;
 
         //Fwd/backward Speed
-        float speed1 = 0;
-
-        float speed2 = 0;
+        float Hori1 = 0;
+        float Vert1 = 0;
 
         //Max Speed
-        float maxSpeed1 = 10f;
+        float GreenMaxHori1 = 10f;
+        float GreenMaxVert1 = 10f;
 
         public Form1()
         {
@@ -54,41 +59,67 @@ namespace WindowsFormsApp1
 
         private void timer_Tick(object sender, EventArgs e)
         {
+            SpeedMathSquareOne();
+            
 
-            //apply speed
-            if (UpDown) 
-            {
-                speed1 += accel1;
-                
-            }
-            if (DownDown)
-            {
-                speed1 -= accel1;
-            }
-
-            if (!UpDown && !DownDown)
-            {
-                if (speed1 > 0)
-                {
-                    speed1 -= friction1;
-                }
-                if (speed1 < 0)
-                {
-                    speed1 += friction1;
-                }
-            }
-
-            if (speed1 > maxSpeed1) speed1 = maxSpeed1;
-
-            x1 += speed1;
-            //y1 += speed1;
+            x1 += Hori1;
+            y1 += Vert1;
             Invalidate();
         }
 
+        private void SpeedMathSquareOne()
+        {
+            //apply speed
+            if (UpDown) Vert1 -= GreenAccel1;
+            if (DownDown) Vert1 += GreenAccel1;
+            if (LeftDown) Hori1 -= GreenAccel1;
+            if (RightDown) Hori1 += GreenAccel1;
+
+            //apply friction
+            if (!UpDown && !DownDown)
+            {
+                if (Vert1 > 0)
+                {
+                    Vert1 -= friction1;
+                }
+                if (Vert1 < 0)
+                {
+                    Vert1 += friction1;
+                }
+                //jitter/creep fix
+                if (Math.Abs(Vert1) < 0.1f)
+                    Vert1 = 0;
+            }
+            if (!LeftDown && !RightDown)
+            {
+                if (Hori1 > 0)
+                {
+                    Hori1 -= friction1;
+                }
+                if (Hori1 < 0)
+                {
+                    Hori1 += friction1;
+                }
+
+                //jitter/creep fix
+                if(Math.Abs(Hori1) < 0.1f)
+                    Hori1 = 0;
+            }
+
+            //Limit top speed
+            if (Hori1 > GreenMaxHori1) Hori1 = GreenMaxHori1;
+            if (Hori1 < -GreenMaxHori1) Hori1 = -GreenMaxHori1;
+            if (Vert1 > GreenMaxVert1) Vert1 = GreenMaxVert1;
+            if (Vert1 < -GreenMaxVert1) Vert1 = -GreenMaxVert1;
+
+            if (x1 < 15 || x1 > 1500) Hori1 = -Hori1;
+            if (y1 < 15 || y1 > 800) Vert1 = -Vert1;
+        }
         private void Form1_KeyUp(object sender, KeyEventArgs e)
         {
             switch (e.KeyCode)
             {
+                // add boolean for each key condition
                 case Keys.Up:
                     UpDown = false;
                     break;
@@ -123,7 +154,7 @@ namespace WindowsFormsApp1
         private void Form1_KeyDown(object sender, KeyEventArgs e)
         {
             switch (e.KeyCode)
-            {
+            { // add boolean for each key condition
                 case Keys.Up:
                     UpDown = true;
                     break;
@@ -148,7 +179,6 @@ namespace WindowsFormsApp1
                 case Keys.D:
                     DDown = true;
                     break;*/
-
             }
         }
 
@@ -163,8 +193,7 @@ namespace WindowsFormsApp1
             g.TranslateTransform(x1, y1);
 
             //sq1
-            g.FillRectangle(Brushes.Green, -30, -15, 60, 30);
-            g.FillRectangle(Brushes.Black, -25, -10, 10, 20);
+            g.FillRectangle(Brushes.Green, -30, -15, 30, 30);
             g.ResetTransform();
 
             //sq2
@@ -173,11 +202,7 @@ namespace WindowsFormsApp1
             //g.FillRectangle(Brushes.Red, -30, -15, 60, 30);
             //g.FillRectangle(Brushes.Black, -25, -10, 10, 20);
             //  g.ResetTransform();
-
-
-
-
-
+            
         }
     }
 }
