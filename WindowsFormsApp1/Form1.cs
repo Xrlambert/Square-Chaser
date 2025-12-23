@@ -12,23 +12,72 @@ namespace WindowsFormsApp1
 {
     public partial class Form1 : Form
     {
+        Random rand = new Random();
+
         //Key States
         bool UpDown, DownDown, RightDown, LeftDown;
+        bool WDown, SDown, ADown, DDown;
 
         //Position Variables
-        float x = 0;
-        float y = 0;
+        float x1 = 50;
+        float y1 = 300;
 
-        //Fwd/backward Speed
-        float speed = 0;
+        float x2 = 30;
+        float y2 = 30;
+
+        //Accelleration
+        float accel1 = 0.2f;
+        float accel2 = 0.2f;
 
         //Friction
-        float friction = 0.09f;
+        float friction1 = 0.09f;
+        float friction2 = 0.09f;
 
+        //Fwd/backward Speed
+        float speed1 = 0;
+
+        float speed2 = 0;
+
+        //Max Speed
+        float maxSpeed1 = 10f;
 
         public Form1()
         {
             InitializeComponent();
+
+            KeyDown += Form1_KeyDown;
+            KeyUp += Form1_KeyUp;
+        }
+
+
+        private void timer_Tick(object sender, EventArgs e)
+        {
+
+            //apply speed
+            if (UpDown) 
+            {
+                speed1 += accel1;
+                
+            }
+            if (DownDown)
+            {
+                speed1 -= accel1;
+            }
+
+            if (!UpDown && !DownDown)
+            {
+                if (speed1 > 0)
+                {
+                    speed1 -= friction1;
+                }
+                if (speed1 < 0)
+                {
+                    speed1 += friction1;
+                }
+            }
+
+            x1 += speed1;
+            y1 += speed1;
         }
 
         private void Form1_KeyUp(object sender, KeyEventArgs e)
@@ -47,6 +96,18 @@ namespace WindowsFormsApp1
                 case Keys.Right:
                     RightDown = false;
                     break;
+                /*case Keys.W:
+                    WDown = false;
+                    break;
+                case Keys.S:
+                    SDown = false;
+                    break;
+                case Keys.A:
+                    ADown = false;
+                    break;
+                case Keys.D:
+                    DDown = false;
+                    break;*/
             }
             //if (e.KeyCode == Keys.Up) UpDown = true;
             //if (e.KeyCode == Keys.Down) DownDown = true;
@@ -70,6 +131,19 @@ namespace WindowsFormsApp1
                 case Keys.Right:
                     RightDown = true;
                     break;
+                /*case Keys.W:
+                    WDown = true;
+                    break;
+                case Keys.S:
+                    SDown = true;
+                    break;
+                case Keys.A:
+                    ADown = true;
+                    break;
+                case Keys.D:
+                    DDown = true;
+                    break;*/
+
             }
         }
 
@@ -81,7 +155,24 @@ namespace WindowsFormsApp1
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
             
             // Move origin to vehicle center.
-            g.TranslateTransform(x, y);
+            g.TranslateTransform(x1, y1);
+
+            //sq1
+            g.FillRectangle(Brushes.Green, -30, -15, 60, 30);
+            g.FillRectangle(Brushes.Black, -25, -10, 10, 20);
+            g.ResetTransform();
+
+            //sq2
+            //g.TranslateTransform(x2, y2);
+
+            //g.FillRectangle(Brushes.Red, -30, -15, 60, 30);
+            //g.FillRectangle(Brushes.Black, -25, -10, 10, 20);
+            //  g.ResetTransform();
+
+
+
+
+
         }
     }
 }
