@@ -47,6 +47,8 @@ namespace WindowsFormsApp1
 
             KeyDown += Form1_KeyDown;
             KeyUp += Form1_KeyUp;
+            
+            timer.Tick += timer_Tick;
         }
 
 
@@ -76,8 +78,11 @@ namespace WindowsFormsApp1
                 }
             }
 
+            if (speed1 > maxSpeed1) speed1 = maxSpeed1;
+
             x1 += speed1;
-            y1 += speed1;
+            //y1 += speed1;
+            Invalidate();
         }
 
         private void Form1_KeyUp(object sender, KeyEventArgs e)
