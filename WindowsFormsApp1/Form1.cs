@@ -64,11 +64,11 @@ namespace WindowsFormsApp1
         private void timer_Tick(object sender, EventArgs e)
         {
             //call math for square speed, using passed variables to allow for more than one square
-            SpeedMathSquare(GreenAccel, ref Vert1, ref Hori1, friction1);
+            SpeedMathSquare(GreenAccel, ref Vert1, ref Hori1, friction1, ref x1, ref y1, UpDown, DownDown, LeftDown, RightDown);
             SpeedLimit(GreenMaxHori, ref Hori1, ref Vert1, GreenMaxVert);
 
 
-            SpeedMathSquare(RedAccell, ref Vert2, ref Hori2, friction2);
+            SpeedMathSquare(RedAccell, ref Vert2, ref Hori2, friction2, ref x2, ref y2, WDown, SDown, ADown, DDown);
             SpeedLimit(RedMaxHori, ref Hori2, ref Vert2, RedMaxVert);
 
             x1 += Hori1;
@@ -79,38 +79,38 @@ namespace WindowsFormsApp1
             Invalidate();
         }
 
-        private void SpeedMathSquare(float acelerate, ref float vertical, ref float horizontal, float friction)
+        private void SpeedMathSquare(float acelerate, ref float vertical, ref float horizontal, float friction, ref float x, ref float y, bool Up, bool Down, bool Left, bool Right)
         {
             //apply speed
-            if (UpDown || WDown) vertical -= acelerate;
-            if (DownDown || SDown) vertical += acelerate;
-            if (LeftDown || ADown) horizontal -= acelerate;
-            if (RightDown || DDown) horizontal += acelerate;
+            if (Up) vertical -= acelerate;
+            if (Down) vertical += acelerate;
+            if (Left) horizontal -= acelerate;
+            if (Right) horizontal += acelerate;
 
             //apply friction
-            if (!UpDown && !DownDown)
+            if (!Up && !Down)
             {
                 if (vertical > 0)
                 {
-                    vertical -= friction1;
+                    vertical -= friction;
                 }
                 if (vertical < 0)
                 {
-                    vertical += friction1;
+                    vertical += friction;
                 }
                 //jitter/creep fix
                 if (Math.Abs(vertical) < 0.1f)
                     vertical = 0;
             }
-            if (!LeftDown && !RightDown)
+            if (!Left && !Right)
             {
                 if (horizontal > 0)
                 {
-                    horizontal -= friction1;
+                    horizontal -= friction;
                 }
                 if (horizontal < 0)
                 {
-                    horizontal += friction1;
+                    horizontal += friction;
                 }
 
                 //jitter/creep fix
@@ -119,12 +119,12 @@ namespace WindowsFormsApp1
             }
 
             //Bounce square off walls when square location is out of bounds
-            if (x1 < 25) x1 = 25;
-            if (x1 > 1520) x1 = 1520;
-            if (y1 < 5) y1 = 5;
-            if (y1 > 790) y1 = 790;
-            if (x1 == 25 || x1 == 1520) horizontal = -horizontal * 0.8f;
-            if (y1 == 5 || y1 == 790) vertical = -vertical * 0.8f;
+            if (x < 25) x = 25;
+            if (x > 1520) x = 1520;
+            if (y < 5) y = 5;
+            if (y > 790) y = 790;
+            if (x == 25 || x == 1520) horizontal = -horizontal * 0.8f;
+            if (y == 5 || y == 790) vertical = -vertical * 0.8f;
             return;
         }
 
@@ -136,9 +136,9 @@ namespace WindowsFormsApp1
             if (vertical > maxVert) vertical = maxVert;
             if (vertical < -maxVert) vertical = -maxVert;
 
-            if (Math.Sqrt(horizontal * horizontal + Vert1 * Vert1) > maxHori)
+            if (Math.Sqrt(horizontal * horizontal + vertical * vertical) > maxHori)
             {
-                float angle = (float)Math.Atan2(Vert1, horizontal);
+                float angle = (float)Math.Atan2(vertical, horizontal);
                 horizontal = maxHori * (float)Math.Cos(angle);
                 Vert1 = maxHori * (float)Math.Sin(angle);
             }
@@ -221,12 +221,12 @@ namespace WindowsFormsApp1
             g.TranslateTransform(x1, y1);
 
             //sq1
-            g.FillRectangle(Brushes.Green, -30, -15, 30, 30);
+            g.FillRectangle(Brushes.Green, -30, -15, 20, 20);
             g.ResetTransform();
 
             //sq2
             g.TranslateTransform(x2, y2);
-            g.FillRectangle(Brushes.Red, -30, -15, 30, 30);
+            g.FillRectangle(Brushes.Red, -30, -15, 20, 20);
             g.ResetTransform();
             
         }
