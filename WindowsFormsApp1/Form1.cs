@@ -31,8 +31,8 @@ namespace WindowsFormsApp1
         float y2 = 30;
 
         //Accelleration
-        float GreenAccel1 = 0.2f;
-        float RedAccell2 = 0.2f;
+        float GreenAccel = 0.2f;
+        float RedAccell = 0.2f;
 
         //Friction
         float friction1 = 0.09f;
@@ -41,10 +41,14 @@ namespace WindowsFormsApp1
         //Fwd/backward Speed
         float Hori1 = 0;
         float Vert1 = 0;
+        float Vert2 = 0;
+        float Hori2 = 0;
 
         //Max Speed
-        float GreenMaxHori1 = 10f;
-        float GreenMaxVert1 = 10f;
+        float GreenMaxHori = 10f;
+        float GreenMaxVert = 10f;
+        float RedMaxHori = 10f;
+        float RedMaxVert = 10f;
 
         public Form1()
         {
@@ -60,21 +64,28 @@ namespace WindowsFormsApp1
         private void timer_Tick(object sender, EventArgs e)
         {
             //call math for square speed, using passed variables to allow for more than one square
-            SpeedMathSquare(GreenAccel1, ref Vert1, ref Hori1, friction1);
-            SpeedLimit();
+            SpeedMathSquare(GreenAccel, ref Vert1, ref Hori1, friction1);
+            SpeedLimit(GreenMaxHori, ref Hori1, ref Vert1, GreenMaxVert);
+
+
+            SpeedMathSquare(RedAccell, ref Vert2, ref Hori2, friction2);
+            SpeedLimit(RedMaxHori, ref Hori2, ref Vert2, RedMaxVert);
 
             x1 += Hori1;
             y1 += Vert1;
+
+            x2 += Hori2;
+            y2 += Vert2;
             Invalidate();
         }
 
         private void SpeedMathSquare(float acelerate, ref float vertical, ref float horizontal, float friction)
         {
             //apply speed
-            if (UpDown) vertical -= acelerate;
-            if (DownDown) vertical += acelerate;
-            if (LeftDown) horizontal -= acelerate;
-            if (RightDown) horizontal += acelerate;
+            if (UpDown || WDown) vertical -= acelerate;
+            if (DownDown || SDown) vertical += acelerate;
+            if (LeftDown || ADown) horizontal -= acelerate;
+            if (RightDown || DDown) horizontal += acelerate;
 
             //apply friction
             if (!UpDown && !DownDown)
@@ -117,19 +128,19 @@ namespace WindowsFormsApp1
             return;
         }
 
-        private void SpeedLimit()
+        private void SpeedLimit(float maxHori, ref float horizontal, ref float vertical, float maxVert)
         {
             //Limit top speed (Having to use vector)
-            if (Hori1 > GreenMaxHori1) Hori1 = GreenMaxHori1;
-            if (Hori1 < -GreenMaxHori1) Hori1 = -GreenMaxHori1;
-            if (Vert1 > GreenMaxVert1) Vert1 = GreenMaxVert1;
-            if (Vert1 < -GreenMaxVert1) Vert1 = -GreenMaxVert1;
+            if (horizontal > maxHori) horizontal = maxHori;
+            if (horizontal < -maxHori) horizontal = -maxHori;
+            if (vertical > maxVert) vertical = maxVert;
+            if (vertical < -maxVert) vertical = -maxVert;
 
-            if (Math.Sqrt(Hori1 * Hori1 + Vert1 * Vert1) > GreenMaxHori1)
+            if (Math.Sqrt(horizontal * horizontal + Vert1 * Vert1) > maxHori)
             {
-                float angle = (float)Math.Atan2(Vert1, Hori1);
-                Hori1 = GreenMaxHori1 * (float)Math.Cos(angle);
-                Vert1 = GreenMaxHori1 * (float)Math.Sin(angle);
+                float angle = (float)Math.Atan2(Vert1, horizontal);
+                horizontal = maxHori * (float)Math.Cos(angle);
+                Vert1 = maxHori * (float)Math.Sin(angle);
             }
         }
         private void Form1_KeyUp(object sender, KeyEventArgs e)
@@ -149,7 +160,7 @@ namespace WindowsFormsApp1
                 case Keys.Right:
                     RightDown = false;
                     break;
-                /*case Keys.W:
+                case Keys.W:
                     WDown = false;
                     break;
                 case Keys.S:
@@ -160,7 +171,7 @@ namespace WindowsFormsApp1
                     break;
                 case Keys.D:
                     DDown = false;
-                    break;*/
+                    break;
             }
             //if (e.KeyCode == Keys.Up) UpDown = true;
             //if (e.KeyCode == Keys.Down) DownDown = true;
@@ -184,7 +195,7 @@ namespace WindowsFormsApp1
                 case Keys.Right:
                     RightDown = true;
                     break;
-                /*case Keys.W:
+                case Keys.W:
                     WDown = true;
                     break;
                 case Keys.S:
@@ -195,7 +206,7 @@ namespace WindowsFormsApp1
                     break;
                 case Keys.D:
                     DDown = true;
-                    break;*/
+                    break;
             }
         }
 
@@ -214,11 +225,9 @@ namespace WindowsFormsApp1
             g.ResetTransform();
 
             //sq2
-            //g.TranslateTransform(x2, y2);
-
-            //g.FillRectangle(Brushes.Red, -30, -15, 60, 30);
-            //g.FillRectangle(Brushes.Black, -25, -10, 10, 20);
-            //  g.ResetTransform();
+            g.TranslateTransform(x2, y2);
+            g.FillRectangle(Brushes.Red, -30, -15, 30, 30);
+            g.ResetTransform();
             
         }
     }
