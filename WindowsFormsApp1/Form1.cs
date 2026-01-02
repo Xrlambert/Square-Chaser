@@ -1,6 +1,8 @@
 ﻿//Xavier Lambert ISC3U
 //Square chaser project with semi realistic car movement as a test bed for final project while remaining separate utilising
-//custom physics engine with first education from example, made from scratch afterwards.
+//custom physics engine with first in depth learning with an example project using in depth pseudocode and questions, made from scratch.
+//two sets of coordinate draw squares that can be moved with arrow keys and WASD respectively with acceleration, friction, maximum speed
+//and bounce off walls implemented. sends points to two functions to calculate speed and limit speed each tick of the timer before updating position and redrawing.
 
 
 using System;
