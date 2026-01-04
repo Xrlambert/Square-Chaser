@@ -14,6 +14,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Threading;
 
 namespace WindowsFormsApp1
 {
@@ -43,14 +44,25 @@ namespace WindowsFormsApp1
         //Fwd/backward Speed
         float Hori1 = 0;
         float Vert1 = 0;
+        float Hori2 = 0; 
         float Vert2 = 0;
-        float Hori2 = 0;
 
         //Max Speed
         float GreenMaxHori = 10f;
-        float GreenMaxVert = 10f;
+        float GreenMaxVert = 10f; 
         float RedMaxHori = 10f;
         float RedMaxVert = 10f;
+
+        //Variables for "powerups"
+        float pointX, pointY;
+        bool pointVisible = false;
+        float pointLifetime = 300; //ticks(roughly 5 seconds)
+        float pointTimer = 0;
+        int pelletSize = 10;
+        int pointRespawnDelay = 120;   // 2 seconds
+        int pointRespawnTimer = 0;
+
+
 
         public Form1()
         {
@@ -60,6 +72,11 @@ namespace WindowsFormsApp1
             KeyUp += Form1_KeyUp;
             
             timer.Tick += timer_Tick;
+
+            Thread.Sleep(1000);
+            PlaceObjectRandomly(ref pointX, ref pointY);
+            pointVisible = true;
+            pointTimer = pointLifetime; 
         }
 
 
@@ -78,6 +95,52 @@ namespace WindowsFormsApp1
 
             x2 += Hori2;
             y2 += Vert2;
+
+            RectangleF greenRect = new RectangleF(x1 - 15, y1 - 30, 20, 20);
+            RectangleF redRect = new RectangleF(x2 - 15, y2 - 30, 20, 20);
+
+
+            RectangleF pointRect = new RectangleF(
+            pointX - pelletSize / 2,
+            pointY - pelletSize / 2,
+            pelletSize,
+            pelletSize);
+
+            if (pointVisible)
+            {
+                pointTimer--;
+                if (pointTimer <= 0)
+                    pointVisible = false;
+            }
+
+            if (pointVisible && greenRect.IntersectsWith(pointRect))
+            {
+                //ADD TO SCORE
+                pointVisible = false;
+            }
+
+            if (pointVisible && redRect.IntersectsWith(pointRect))
+            {
+                //ADD TO SCORE
+                pointVisible = false;
+            }
+
+            if (!pointVisible)
+            {
+                if (pointRespawnTimer > 0)
+                {
+                    pointRespawnTimer--;
+                }
+                else
+                {
+                    PlaceObjectRandomly(ref pointX, ref pointY);
+                    pointVisible = true;
+                    pointTimer = pointLifetime;
+                    pointRespawnTimer = pointRespawnDelay;
+                }
+            }
+
+
             Invalidate();
         }
 
@@ -130,6 +193,8 @@ namespace WindowsFormsApp1
             return;
         }
 
+
+
         private void SpeedLimit(float maxHori, ref float horizontal, ref float vertical, float maxVert)
         {
             //Limit top speed (Having to use vector)
@@ -142,7 +207,7 @@ namespace WindowsFormsApp1
             {
                 float angle = (float)Math.Atan2(vertical, horizontal);
                 horizontal = maxHori * (float)Math.Cos(angle);
-                Vert1 = maxHori * (float)Math.Sin(angle);
+                vertical = maxHori * (float)Math.Sin(angle); ////////////////////////////PROBLEM CAUSED BY FIRST VERTICAL ON THE LINE BENG VERT1 FROM GREEN INSTAD OF UNIVERSAL PARAMTER
             }
         }
         private void Form1_KeyUp(object sender, KeyEventArgs e)
@@ -212,23 +277,29 @@ namespace WindowsFormsApp1
             }
         }
 
+        private void PlaceObjectRandomly(ref float x, ref float y)
+        {
+            int margin = 40;
+            x = rand.Next(margin, (this.ClientSize.Width - margin));
+            y = rand.Next(margin, (this.ClientSize.Height - margin));
+        }
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
 
             Graphics g = e.Graphics;
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-            
-            // Move origin to vehicle center.
-            g.TranslateTransform(x1, y1);
+
+            if (pointVisible) { g.FillRectangle(Brushes.White, pointX - pelletSize / 2, pointY - pelletSize / 2, pelletSize, pelletSize); }
 
             //sq1
-            g.FillRectangle(Brushes.Green, -30, -15, 20, 20);
+            g.TranslateTransform(x1, y1);
+            g.FillRectangle(Brushes.Lime, -30, -15, 20, 20);
             g.ResetTransform();
 
             //sq2
             g.TranslateTransform(x2, y2);
-            g.FillRectangle(Brushes.Red, -30, -15, 20, 20);
+            g.FillRectangle(Brushes.MediumVioletRed, -30, -15, 20, 20);
             g.ResetTransform();
             
         }
