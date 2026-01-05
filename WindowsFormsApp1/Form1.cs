@@ -56,11 +56,13 @@ namespace WindowsFormsApp1
         //Variables for "powerups"
         float pointX, pointY;
         bool pointVisible = false;
-        float pointLifetime = 300; //ticks(roughly 5 seconds)
+        float pointLifetime = 2500; //ticks(roughly 5 seconds)
         float pointTimer = 0;
         int pelletSize = 10;
         int pointRespawnDelay = 120;   // 2 seconds
         int pointRespawnTimer = 0;
+        bool pointGreen = false;
+        bool pointRed = false;
 
 
 
@@ -96,16 +98,6 @@ namespace WindowsFormsApp1
             x2 += Hori2;
             y2 += Vert2;
 
-            RectangleF greenRect = new RectangleF(x1 - 15, y1 - 30, 20, 20);
-            RectangleF redRect = new RectangleF(x2 - 15, y2 - 30, 20, 20);
-
-
-            RectangleF pointRect = new RectangleF(
-            pointX - pelletSize / 2,
-            pointY - pelletSize / 2,
-            pelletSize,
-            pelletSize);
-
             if (pointVisible)
             {
                 pointTimer--;
@@ -113,13 +105,13 @@ namespace WindowsFormsApp1
                     pointVisible = false;
             }
 
-            if (pointVisible && greenRect.IntersectsWith(pointRect))
+            if (pointX +- 10 == x1 && pointY +- 10 == y1)
             {
                 //ADD TO SCORE
                 pointVisible = false;
             }
 
-            if (pointVisible && redRect.IntersectsWith(pointRect))
+            if (pointX +- 10 == x2 && pointY +- 10 == y2)
             {
                 //ADD TO SCORE
                 pointVisible = false;
@@ -140,8 +132,9 @@ namespace WindowsFormsApp1
                 }
             }
 
-
             Invalidate();
+            //debug for positioning of squares
+            debugLabel.Text = $"G{x1}, {y1}\nR{x2}, {y2}\nPT{pointX}, {pointY}";
         }
 
         private void SpeedMathSquare(float acelerate, ref float vertical, ref float horizontal, float friction, ref float x, ref float y, bool Up, bool Down, bool Left, bool Right)
