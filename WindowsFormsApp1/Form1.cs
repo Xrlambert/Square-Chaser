@@ -15,6 +15,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Threading;
+using System.Windows.Forms.VisualStyles;
+using System.Web;
 
 namespace WindowsFormsApp1
 {
@@ -56,7 +58,7 @@ namespace WindowsFormsApp1
         //Variables for "powerups"
         float pointX, pointY;
         bool pointVisible = false;
-        float pointLifetime = 2500; //ticks(roughly 5 seconds)
+        float pointLifetime = 300; //ticks(roughly 5 seconds)
         float pointTimer = 0;
         int pelletSize = 10;
         int pointRespawnDelay = 120;   // 2 seconds
@@ -64,6 +66,21 @@ namespace WindowsFormsApp1
         bool pointGreen = false;
         bool pointRed = false;
 
+        string score = "";
+        int gScore;
+        int rScore;
+
+        float speedX, speedY;
+        bool speedVisible = false;
+        float speedLifetime = 300; //ticks(roughly 5 seconds)
+        float playerEffectSpeed = 320; //ticks(roughly 5.1 seconds)  
+        float speedTimer = 0;   
+        int speedSize = 10;
+        int speedRespawnDelay = 450;   // 
+        int speedRespawnTimer = 0;
+        bool  speedGreen = false;
+        bool speedRed = false;
+        bool speedActive = false;
 
 
         public Form1()
@@ -77,8 +94,12 @@ namespace WindowsFormsApp1
 
             Thread.Sleep(1000);
             PlaceObjectRandomly(ref pointX, ref pointY);
+            PlaceObjectRandomly(ref speedX, ref speedY);
+
             pointVisible = true;
             pointTimer = pointLifetime; 
+            speedVisible = true;
+            speedTimer = speedLifetime;
         }
 
 
@@ -98,28 +119,41 @@ namespace WindowsFormsApp1
             x2 += Hori2;
             y2 += Vert2;
 
+            AddPoint();
+            ApplySpeedBonus();
+            Invalidate();
+            //debug for positioning of squares
+            debugLabel.Text = $"G{x1}, {y1}\nR{x2}, {y2}\nPT{pointX}, {pointY}\n\n{gScore}         {rScore}";
+        }
+
+        private void AddPoint()
+        {
             if (pointVisible)
             {
                 pointTimer--;
                 if (pointTimer <= 0)
+                {
                     pointVisible = false;
+                }
             }
 
-            if (pointX +- 10 == x1 && pointY +- 10 == y1)
+            if (pointVisible && Math.Abs(pointX - x1) < pelletSize + 10 && Math.Abs(pointY - y1) < pelletSize + 10)
             {
-                //ADD TO SCORE
+                gScore++;
                 pointVisible = false;
+                ScoreGreen.Text = gScore.ToString();
             }
 
-            if (pointX +- 10 == x2 && pointY +- 10 == y2)
+            if (pointVisible && Math.Abs(pointX - x2) < pelletSize + 10 && Math.Abs(pointY - y2) < pelletSize + 10)
             {
-                //ADD TO SCORE
+                rScore++;
                 pointVisible = false;
+                RedScore.Text = rScore.ToString();
             }
 
             if (!pointVisible)
             {
-                if (pointRespawnTimer > 0)
+                if (pointRespawnTimer >= 0)
                 {
                     pointRespawnTimer--;
                 }
@@ -132,11 +166,79 @@ namespace WindowsFormsApp1
                 }
             }
 
-            Invalidate();
-            //debug for positioning of squares
-            debugLabel.Text = $"G{x1}, {y1}\nR{x2}, {y2}\nPT{pointX}, {pointY}";
         }
 
+        private void ApplySpeedBonus()
+        {
+            {
+                if (speedVisible)
+                {
+                    speedTimer--;
+                    if (speedTimer <= 0)
+                    {
+                        speedVisible = false;
+                    }
+                }
+
+                if (speedVisible && Math.Abs(speedX - x1) < speedSize + 10 && Math.Abs(speedY - y1) < speedSize + 10)
+                {
+                    GreenAccel = 0.4f;
+                    GreenMaxHori = 15f;
+                    GreenMaxVert = 15f;
+                    speedVisible = false;
+                    ScoreGreen.BackColor = Color.Yellow;
+                    speedActive = true;
+                    playerEffectSpeed = 320;
+                }
+
+                if (speedVisible && Math.Abs(speedX - x2) < speedSize + 10 && Math.Abs(speedY - y2) < speedSize + 10)
+                {
+                    RedAccell = 0.4f;
+                    RedMaxHori = 15f;
+                    RedMaxVert = 15f;
+                    speedVisible = false;
+                    RedScore.BackColor = Color.Yellow;
+                    speedActive = true;
+                    playerEffectSpeed = 320;
+                }
+
+                if (playerEffectSpeed > 0 && speedActive)
+                {
+                    playerEffectSpeed--;
+                }
+                else
+                {
+                    // reset to normal
+                    GreenAccel = 0.2f;
+                    GreenMaxHori = 10f;
+                    GreenMaxVert = 10f;
+                    RedAccell = 0.2f;
+                    RedMaxHori = 10f;
+                    RedMaxVert = 10f;
+                    speedActive = false;
+                    playerEffectSpeed = 320;
+
+                    ScoreGreen.BackColor = Color.Black;
+                    RedScore.BackColor = Color.Black;
+                }
+                if (!speedVisible)
+                    {
+                        if (speedRespawnTimer >= 0)
+                        {
+                            speedRespawnTimer--;
+                        }
+                        else
+                        {
+                            PlaceObjectRandomly(ref speedX, ref speedY);
+                            speedVisible = true;
+                            speedTimer = speedLifetime;
+                            speedRespawnTimer = speedRespawnDelay;
+                        }
+                    }
+                }
+
+            }
+        
         private void SpeedMathSquare(float acelerate, ref float vertical, ref float horizontal, float friction, ref float x, ref float y, bool Up, bool Down, bool Left, bool Right)
         {
             //apply speed
@@ -177,12 +279,18 @@ namespace WindowsFormsApp1
             }
 
             //Bounce square off walls when square location is out of bounds
-            if (x < 25) x = 25;
+            /*if (x < 25) x = 25;
             if (x > 1520) x = 1520;
             if (y < 5) y = 5;
             if (y > 790) y = 790;
             if (x == 25 || x == 1520) horizontal = -horizontal * 0.8f;
-            if (y == 5 || y == 790) vertical = -vertical * 0.8f;
+            if (y == 5 || y == 790) vertical = -vertical * 0.8f;*/
+            if (x < 10) x = 10;
+            if (x > this.ClientSize.Width) x = this.ClientSize.Width;
+            if (y < 10) y = 10;
+            if (y > this.ClientSize.Height) y = this.ClientSize.Height;
+            if (x == 10 || x == this.ClientSize.Width) horizontal = -horizontal * 0.8f;
+            if (y == 10 || y == this.ClientSize.Height) vertical = -vertical * 0.8f;
             return;
         }
 
@@ -284,15 +392,16 @@ namespace WindowsFormsApp1
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
 
             if (pointVisible) { g.FillRectangle(Brushes.White, pointX - pelletSize / 2, pointY - pelletSize / 2, pelletSize, pelletSize); }
+            if (speedVisible) { g.FillRectangle(Brushes.Yellow, speedX - speedSize / 2, speedY - speedSize / 2, speedSize, speedSize); }
 
             //sq1
             g.TranslateTransform(x1, y1);
-            g.FillRectangle(Brushes.Lime, -30, -15, 20, 20);
+            g.FillRectangle(Brushes.Lime, -10, -9, 20, 20); //-30 -15
             g.ResetTransform();
 
             //sq2
             g.TranslateTransform(x2, y2);
-            g.FillRectangle(Brushes.MediumVioletRed, -30, -15, 20, 20);
+            g.FillRectangle(Brushes.MediumVioletRed, -10, -9, 20, 20); //-30 -15
             g.ResetTransform();
             
         }

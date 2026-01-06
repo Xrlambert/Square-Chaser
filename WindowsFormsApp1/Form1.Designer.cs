@@ -31,6 +31,8 @@
             this.components = new System.ComponentModel.Container();
             this.timer = new System.Windows.Forms.Timer(this.components);
             this.debugLabel = new System.Windows.Forms.Label();
+            this.ScoreGreen = new System.Windows.Forms.Label();
+            this.RedScore = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // timer
@@ -48,12 +50,36 @@
             this.debugLabel.Size = new System.Drawing.Size(0, 13);
             this.debugLabel.TabIndex = 0;
             // 
+            // ScoreGreen
+            // 
+            this.ScoreGreen.AutoSize = true;
+            this.ScoreGreen.Font = new System.Drawing.Font("MS PGothic", 26.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.ScoreGreen.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(255)))), ((int)(((byte)(192)))));
+            this.ScoreGreen.Location = new System.Drawing.Point(446, 13);
+            this.ScoreGreen.Name = "ScoreGreen";
+            this.ScoreGreen.Size = new System.Drawing.Size(34, 35);
+            this.ScoreGreen.TabIndex = 1;
+            this.ScoreGreen.Text = "0";
+            // 
+            // RedScore
+            // 
+            this.RedScore.AutoSize = true;
+            this.RedScore.Font = new System.Drawing.Font("MS PGothic", 26.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.RedScore.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(192)))), ((int)(((byte)(192)))));
+            this.RedScore.Location = new System.Drawing.Point(1020, 13);
+            this.RedScore.Name = "RedScore";
+            this.RedScore.Size = new System.Drawing.Size(34, 35);
+            this.RedScore.TabIndex = 2;
+            this.RedScore.Text = "0";
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.Black;
             this.ClientSize = new System.Drawing.Size(1504, 781);
+            this.Controls.Add(this.RedScore);
+            this.Controls.Add(this.ScoreGreen);
             this.Controls.Add(this.debugLabel);
             this.DoubleBuffered = true;
             this.KeyPreview = true;
@@ -70,6 +96,8 @@
 
         private System.Windows.Forms.Timer timer;
         private System.Windows.Forms.Label debugLabel;
+        private System.Windows.Forms.Label ScoreGreen;
+        private System.Windows.Forms.Label RedScore;
     }
 }
 
