@@ -128,6 +128,44 @@ namespace WindowsFormsApp1
             Invalidate();
             //debug for positioning of squares
             debugLabel.Text = $"G{x1}, {y1}\nR{x2}, {y2}\nPT{pointX}, {pointY}\n\n{gScore}         {rScore}";
+
+            if (gScore >= 10)
+            {
+                timer.Stop();
+                GreenVic.Visible = true;
+                Restart.Visible = true;
+            }
+
+            if (rScore >= 10)
+            {
+                timer.Stop();
+                RedVic.Visible = true;
+                Restart.Visible = true;
+            }
+        }
+
+        private void Win_Click(object sender, EventArgs e)
+        {
+            gScore = 10;
+        }
+
+        private void Restart_Click(object sender, EventArgs e)
+        {
+            gScore = 0;
+            rScore = 0;
+            Restart.Visible = false;
+            GreenVic.Visible = false;
+            RedVic.Visible = false;
+            Hori1 = 0;
+            Vert1 = 0;
+            Hori2 = 0;
+            Vert2 = 0;
+
+            x1 = rand.Next(100, 400);
+            y1 = rand.Next(100, 400);
+            x2 = rand.Next(600, 1200);
+            y2 = rand.Next(300, 600);
+            timer.Start();
         }
 
         private void AddPoint()
