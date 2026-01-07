@@ -100,6 +100,10 @@ namespace WindowsFormsApp1
             pointTimer = pointLifetime; 
             speedVisible = true;
             speedTimer = speedLifetime;
+            x1 = rand.Next(100, 400);
+            y1 = rand.Next(100, 400);
+            x2 = rand.Next(600, 1200);
+            y2 = rand.Next(300, 600);
         }
 
 
@@ -183,8 +187,8 @@ namespace WindowsFormsApp1
                 if (speedVisible && Math.Abs(speedX - x1) < speedSize + 10 && Math.Abs(speedY - y1) < speedSize + 10)
                 {
                     GreenAccel = 0.4f;
-                    GreenMaxHori = 15f;
-                    GreenMaxVert = 15f;
+                    GreenMaxHori = 13f;
+                    GreenMaxVert = 13f;
                     speedVisible = false;
                     ScoreGreen.BackColor = Color.Yellow;
                     speedActive = true;
@@ -194,8 +198,8 @@ namespace WindowsFormsApp1
                 if (speedVisible && Math.Abs(speedX - x2) < speedSize + 10 && Math.Abs(speedY - y2) < speedSize + 10)
                 {
                     RedAccell = 0.4f;
-                    RedMaxHori = 15f;
-                    RedMaxVert = 15f;
+                    RedMaxHori = 13f;
+                    RedMaxVert = 13f;
                     speedVisible = false;
                     RedScore.BackColor = Color.Yellow;
                     speedActive = true;
