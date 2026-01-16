@@ -91,6 +91,7 @@ namespace WindowsFormsApp1
             KeyUp += Form1_KeyUp;
             
             timer.Tick += timer_Tick;
+            KeyPreview = true;
 
             Thread.Sleep(1000);
             PlaceObjectRandomly(ref pointX, ref pointY);
@@ -117,17 +118,21 @@ namespace WindowsFormsApp1
             //SpeedMathSquare(RedAccell, ref Vert2, ref Hori2, friction2, ref x2, ref y2, WDown, SDown, ADown, DDown);
             //SpeedLimit(RedMaxHori, ref Hori2, ref Vert2, RedMaxVert);
 
-            //x1 += Hori1;
-            //y1 += Vert1;
+            x1 += Hori1;
+            y1 += Vert1;
 
-            x2 += Hori2;
-            y2 += Vert2;
+            //x2 += Hori2;
+            //y2 += Vert2;
 
             AddPoint();
             ApplySpeedBonus();
             Invalidate();
             //debug for positioning of squares
             debugLabel.Text = $"G{x1}, {y1}\nR{x2}, {y2}\nPT{pointX}, {pointY}\n\n{gScore}         {rScore}";
+            debugLabel.Text += $"\nUp:{UpDown} Down:{DownDown} Left:{LeftDown} Right:{RightDown}";
+            debugLabel.Text += $"\nx1:{x1} y1:{y1} H:{Hori1} V:{Vert1}";
+
+
 
             if (gScore >= 10)
             {
