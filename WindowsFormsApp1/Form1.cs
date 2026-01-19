@@ -115,14 +115,14 @@ namespace WindowsFormsApp1
             SpeedLimit(GreenMaxHori, ref Hori1, ref Vert1, GreenMaxVert);
 
 
-            //SpeedMathSquare(RedAccell, ref Vert2, ref Hori2, friction2, ref x2, ref y2, WDown, SDown, ADown, DDown);
-            //SpeedLimit(RedMaxHori, ref Hori2, ref Vert2, RedMaxVert);
+            SpeedMathSquare(RedAccell, ref Vert2, ref Hori2, friction2, ref x2, ref y2, WDown, SDown, ADown, DDown);
+            SpeedLimit(RedMaxHori, ref Hori2, ref Vert2, RedMaxVert);
 
             x1 += Hori1;
             y1 += Vert1;
 
-            //x2 += Hori2;
-            //y2 += Vert2;
+            x2 += Hori2;
+            y2 += Vert2;
 
             AddPoint();
             ApplySpeedBonus();
@@ -387,6 +387,9 @@ namespace WindowsFormsApp1
                 case Keys.D:
                     DDown = false;
                     break;
+                case Keys.E:
+                    UpDown = false;
+                    break;
             }
             //if (e.KeyCode == Keys.Up) UpDown = true;
             //if (e.KeyCode == Keys.Down) DownDown = true;
@@ -421,6 +424,9 @@ namespace WindowsFormsApp1
                     break;
                 case Keys.D:
                     DDown = true;
+                    break;
+                case Keys.E:
+                    UpDown = true;
                     break;
             }
         }
