@@ -87,6 +87,8 @@ namespace WindowsFormsApp1
         {
             InitializeComponent();
 
+            Win.TabStop = false;
+            Restart.TabStop = false;
             KeyDown += Form1_KeyDown;
             KeyUp += Form1_KeyUp;
             
@@ -105,8 +107,22 @@ namespace WindowsFormsApp1
             y1 = rand.Next(100, 400);
             x2 = rand.Next(600, 1200);
             y2 = rand.Next(300, 600);
+
+
         }
 
+        protected override bool IsInputKey(Keys keyData)
+        {
+            switch (keyData)
+            {
+                case Keys.Up:
+                case Keys.Down:
+                case Keys.Left:
+                case Keys.Right:
+                    return true;
+            }
+            return base.IsInputKey(keyData);
+        }
 
         private void timer_Tick(object sender, EventArgs e)
         {
