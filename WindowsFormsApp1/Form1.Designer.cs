@@ -37,6 +37,7 @@
             this.RedVic = new System.Windows.Forms.Label();
             this.Restart = new System.Windows.Forms.Button();
             this.Win = new System.Windows.Forms.Button();
+            this.StartButton = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // timer
@@ -127,12 +128,27 @@
             this.Win.UseVisualStyleBackColor = false;
             this.Win.Click += new System.EventHandler(this.Win_Click);
             // 
+            // StartButton
+            // 
+            this.StartButton.BackColor = System.Drawing.SystemColors.ActiveCaptionText;
+            this.StartButton.Font = new System.Drawing.Font("Microsoft Sans Serif", 21.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.StartButton.ForeColor = System.Drawing.Color.White;
+            this.StartButton.Location = new System.Drawing.Point(745, 340);
+            this.StartButton.Name = "StartButton";
+            this.StartButton.Size = new System.Drawing.Size(95, 47);
+            this.StartButton.TabIndex = 7;
+            this.StartButton.Text = "Start";
+            this.StartButton.UseVisualStyleBackColor = false;
+            this.StartButton.Visible = false;
+            this.StartButton.Click += new System.EventHandler(this.StartButton_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.Black;
             this.ClientSize = new System.Drawing.Size(1504, 781);
+            this.Controls.Add(this.StartButton);
             this.Controls.Add(this.Win);
             this.Controls.Add(this.Restart);
             this.Controls.Add(this.RedVic);
@@ -161,6 +177,7 @@
         private System.Windows.Forms.Label RedVic;
         private System.Windows.Forms.Button Restart;
         private System.Windows.Forms.Button Win;
+        private System.Windows.Forms.Button StartButton;
     }
 }
 

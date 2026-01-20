@@ -82,6 +82,8 @@ namespace WindowsFormsApp1
         bool speedRed = false;
         bool speedActive = false;
 
+        bool AIEnabled = true;
+
 
         public Form1()
         {
@@ -89,6 +91,7 @@ namespace WindowsFormsApp1
 
             Win.TabStop = false;
             Restart.TabStop = false;
+            StartButton.TabStop = false;
             KeyDown += Form1_KeyDown;
             KeyUp += Form1_KeyUp;
             
@@ -142,6 +145,7 @@ namespace WindowsFormsApp1
 
             AddPoint();
             ApplySpeedBonus();
+            AIMath();
             Invalidate();
             //debug for positioning of squares
             debugLabel.Text = $"G{x1}, {y1}\nR{x2}, {y2}\nPT{pointX}, {pointY}\n\n{gScore}         {rScore}";
@@ -229,6 +233,14 @@ namespace WindowsFormsApp1
                 }
             }
 
+        }
+
+        private void StartButton_Click(object sender, EventArgs e)
+        {
+            /*StartButton.Visible = false;
+            AIEnabled = true;
+            Win.TabStop = false;
+            Restart.TabStop = false;*/
         }
 
         private void ApplySpeedBonus()
@@ -358,6 +370,32 @@ namespace WindowsFormsApp1
         }
 
 
+        private void AIMath()
+        {
+            if (AIEnabled)
+            {
+                if (x1 < x2)
+                {
+                    ADown = true;
+                    DDown = false;
+                }
+                if (x1 > x2)
+                {
+                    DDown = true;
+                    ADown = false;
+                }
+                if (y1 < y2)
+                {
+                    WDown = true;
+                    SDown = false;
+                }
+                if (y1 > y2)
+                {
+                    SDown = true;
+                    WDown = false;
+                }
+            }
+        }
 
         private void SpeedLimit(float maxHori, ref float horizontal, ref float vertical, float maxVert)
         {
@@ -391,7 +429,7 @@ namespace WindowsFormsApp1
                 case Keys.Right:
                     RightDown = false;
                     break;
-                case Keys.W:
+                /*case Keys.W:
                     WDown = false;
                     break;
                 case Keys.S:
@@ -402,10 +440,7 @@ namespace WindowsFormsApp1
                     break;
                 case Keys.D:
                     DDown = false;
-                    break;
-                case Keys.E:
-                    UpDown = false;
-                    break;
+                    break;*/
             }
             //if (e.KeyCode == Keys.Up) UpDown = true;
             //if (e.KeyCode == Keys.Down) DownDown = true;
@@ -429,7 +464,7 @@ namespace WindowsFormsApp1
                 case Keys.Right:
                     RightDown = true;
                     break;
-                case Keys.W:
+                /*case Keys.W:
                     WDown = true;
                     break;
                 case Keys.S:
@@ -440,10 +475,7 @@ namespace WindowsFormsApp1
                     break;
                 case Keys.D:
                     DDown = true;
-                    break;
-                case Keys.E:
-                    UpDown = true;
-                    break;
+                    break;*/
             }
         }
 
