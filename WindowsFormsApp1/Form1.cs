@@ -82,6 +82,19 @@ namespace WindowsFormsApp1
         bool speedRed = false;
         bool speedActive = false;
 
+        float IceX, IceY;
+        bool IceVisible = false;
+        float IceLifetime = 300; //ticks(roughly 5 seconds)
+        float playerEffectIce = 320; //ticks(roughly 5.1 seconds)  
+        float IceTimer = 0;
+        int IceSize = 10;
+        int IceRespawnDelay = 450;   // 
+        int IceRespawnTimer = 0;
+        bool IceGreen = false;
+        bool IceRed = false;
+        bool IceActive = false;
+        bool iceGreen = false;
+
         bool AIEnabled = true;
 
 
@@ -101,11 +114,15 @@ namespace WindowsFormsApp1
             Thread.Sleep(1000);
             PlaceObjectRandomly(ref pointX, ref pointY);
             PlaceObjectRandomly(ref speedX, ref speedY);
+            PlaceObjectRandomly(ref IceX, ref IceY);
 
             pointVisible = true;
             pointTimer = pointLifetime; 
             speedVisible = true;
             speedTimer = speedLifetime;
+            IceVisible = true;
+            IceTimer = IceLifetime;
+
             x1 = rand.Next(100, 400);
             y1 = rand.Next(100, 400);
             x2 = rand.Next(600, 1200);
@@ -145,6 +162,7 @@ namespace WindowsFormsApp1
 
             AddPoint();
             ApplySpeedBonus();
+            ApplyIceEffect();
             AIMath();
             Invalidate();
             //debug for positioning of squares
@@ -242,6 +260,88 @@ namespace WindowsFormsApp1
             Win.TabStop = false;
             Restart.TabStop = false;*/
         }
+
+        private void ApplyIceEffect()
+        {
+            if (IceVisible)
+            {
+                IceTimer--;
+                if (IceTimer <= 0)
+                {
+                    IceVisible = false;
+                }
+            }
+
+            // Green player collision
+            if (IceVisible && Math.Abs(IceX - x2) < IceSize + 10 && Math.Abs(IceY - y2) < IceSize + 10)
+            {
+                GreenAccel = 0.1f;
+                GreenMaxHori = 10f;
+                GreenMaxVert = 10f;
+
+                IceVisible = false;
+                ScoreGreen.BackColor = Color.LightBlue;
+                iceGreen = true;
+
+                IceActive = true;
+                playerEffectIce = 320;
+            }
+
+            // Red player collision
+            if (IceVisible && Math.Abs(IceX - x1) < IceSize + 10 && Math.Abs(IceY - y1) < IceSize + 10)
+            {
+                RedAccell = 0.1f;
+                RedMaxHori = 10f;
+                RedMaxVert = 10f;
+
+                IceVisible = false;
+                RedScore.BackColor = Color.LightBlue;
+                iceGreen = false;
+
+                IceActive = true;
+                playerEffectIce = 320;
+            }
+
+            // Timer for effect
+            if (playerEffectIce > 0 && IceActive)
+            {
+                playerEffectIce--;
+            }
+            else
+            {
+                // Reset to normal
+                GreenAccel = 0.2f;
+                GreenMaxHori = 10f;
+                GreenMaxVert = 10f;
+
+                RedAccell = 0.2f;
+                RedMaxHori = 10f;
+                RedMaxVert = 10f;
+
+                IceActive = false;
+                playerEffectIce = 320;
+
+                ScoreGreen.BackColor = Color.Black;
+                RedScore.BackColor = Color.Black;
+            }
+
+            // Respawn logic
+            if (!IceVisible)
+            {
+                if (IceRespawnTimer >= 0)
+                {
+                    IceRespawnTimer--;
+                }
+                else
+                {
+                    PlaceObjectRandomly(ref IceX, ref IceY);
+                    IceVisible = true;
+                    IceTimer = IceLifetime;
+                    IceRespawnTimer = IceRespawnDelay;
+                }
+            }
+        }
+
 
         private void ApplySpeedBonus()
         {
@@ -487,6 +587,9 @@ namespace WindowsFormsApp1
         }
         protected override void OnPaint(PaintEventArgs e)
         {
+            Color greenIce = Color.FromArgb(0, 200, 255);   // cyan‑ish green
+            Color redIce = Color.FromArgb(150, 80, 255);  // purple‑blue tint
+
             base.OnPaint(e);
 
             Graphics g = e.Graphics;
@@ -494,17 +597,44 @@ namespace WindowsFormsApp1
 
             if (pointVisible) { g.FillRectangle(Brushes.White, pointX - pelletSize / 2, pointY - pelletSize / 2, pelletSize, pelletSize); }
             if (speedVisible) { g.FillRectangle(Brushes.Yellow, speedX - speedSize / 2, speedY - speedSize / 2, speedSize, speedSize); }
+            if (IceVisible) { g.FillRectangle(Brushes.Blue, IceX - IceSize / 2, IceY - IceSize / 2, IceSize, IceSize); }
 
-            //sq1
+            // sq1 (Green)
             g.TranslateTransform(x1, y1);
-            g.FillRectangle(Brushes.Lime, -10, -9, 20, 20); //-30 -15
+
+            if (IceActive)
+            {
+                if (IceGreen)
+                    g.FillRectangle(new SolidBrush(greenIce), -10, -9, 20, 20);
+                else
+                    g.FillRectangle(Brushes.Lime, -10, -9, 20, 20);   // normal green
+            }
+            else
+            {
+                g.FillRectangle(Brushes.Lime, -10, -9, 20, 20);
+            }
+
             g.ResetTransform();
 
-            //sq2
+
+            // sq2 (Red)
             g.TranslateTransform(x2, y2);
-            g.FillRectangle(Brushes.MediumVioletRed, -10, -9, 20, 20); //-30 -15
+
+            if (IceActive)
+            {
+                if (!IceGreen)
+                    g.FillRectangle(new SolidBrush(redIce), -10, -9, 20, 20);
+                else
+                    g.FillRectangle(Brushes.MediumVioletRed, -10, -9, 20, 20);  // normal red
+            }
+            else
+            {
+                g.FillRectangle(Brushes.MediumVioletRed, -10, -9, 20, 20);
+            }
+
             g.ResetTransform();
-            
+
+
         }
     }
 }
