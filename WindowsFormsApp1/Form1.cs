@@ -1,128 +1,211 @@
-﻿//Xavier Lambert ISC3U
-//Square chaser project with semi realistic car movement as a test bed for final project while remaining separate utilising
-//custom physics engine with first in depth learning with an example project using in depth pseudocode and questions, made from scratch.
-//two sets of coordinate draw squares that can be moved with arrow keys and WASD respectively with acceleration, friction, maximum speed
-//and bounce off walls implemented. sends points to two functions to calculate speed and limit speed each tick of the timer before updating position and redrawing.
-
+﻿// ISC3U Final Project - Square Chaser Game
+// Author: Xavier Lambert
+// 
+// A 2D arcade-style game featuring two player-controlled squares competing to collect points.
+// Demonstrates custom physics engine implementation including acceleration, friction, velocity clamping,
+// wall bouncing, and power-up systems. The game supports both keyboard-controlled and AI-controlled players.
+// 
+// Key Features:
+// - Physics-based movement with acceleration and friction
+// - Vector-based velocity limiting (magnitude clamping)
+// - Dynamic power-up system (Speed boost, Ice slow effect)
+// - Simple predictive AI opponent
+// - Full-screen windowed mode support
+// - Real-time score tracking
+// 
+// Technical Details:
+// - Two independent players controlled by arrow keys and WASD (AI uses WASD)
+// - Three collectible types: Points (white), Speed (yellow), Ice (blue)
+// - Power-up effects: Speed (temporary acceleration boost), Ice (reduced acceleration)
+// - Win condition: First to 10 points
+// - Dynamic collision detection for pickups and wall bouncing
+// 
+// Methods Overview:
+// Movement: SpeedMathSquare, SpeedLimit
+// Game Logic: timer_Tick, AddPoint, ApplySpeedBonus, ApplyIceEffect
+// AI: AIMath (predictive interception)
+// Utilities: PlaceObjectRandomly, IsInputKey, ProcessCmdKey
+// Input: Form1_KeyDown, Form1_KeyUp, Form1_KeyPress
+// Rendering: OnPaint
 
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 using System.Threading;
-using System.Windows.Forms.VisualStyles;
-using System.Web;
+using System.Windows.Forms;
 
 namespace WindowsFormsApp1
 {
+    /// 
+    /// Main game form for Square Chaser.
+    /// Handles all game logic, physics simulation, input processing, rendering, and AI behavior.
+    /// 
     public partial class Form1 : Form
     {
+        /// Shared random number generator for object placement and initialization.
         Random rand = new Random();
 
         //Key States
+        /// True when Up arrow key is pressed.
         bool UpDown, DownDown, RightDown, LeftDown;
+        /// True when W, A, S, D keys are pressed (reserved for second player/AI control).
         bool WDown, SDown, ADown, DDown;
 
         //Position Variables
+        /// Green square X position (screen coordinates).
         float x1 = 50;
+        /// Green square Y position (screen coordinates).
         float y1 = 300;
 
+        /// Red square X position (screen coordinates).
         float x2 = 30;
+        /// Red square Y position (screen coordinates).
         float y2 = 30;
 
-        //Accelleration
+        //Acceleration
+        /// Base acceleration for green square (increased by speed power-up or decreased by ice power-up).
         float GreenAccel = 0.2f;
-        float RedAccell = 0.2f;
+        /// Base acceleration for red square (slightly higher than green).
+        float RedAccell = 0.22f;
 
         //Friction
+        /// Friction applied to green square when no input is detected (slows movement).
         float friction1 = 0.09f;
-        float friction2 = 0.09f;
+        /// Friction applied to red square when no input is detected.
+        float friction2 = 0.11f;
 
-        //Fwd/backward Speed
+        //Forward/Backward Speed (velocity components)
+        /// Green square horizontal velocity component (X-axis movement).
         float Hori1 = 0;
+        /// Green square vertical velocity component (Y-axis movement).
         float Vert1 = 0;
-        float Hori2 = 0; 
+        /// Red square horizontal velocity component (X-axis movement).
+        float Hori2 = 0;
+        /// Red square vertical velocity component (Y-axis movement).
         float Vert2 = 0;
 
         //Max Speed
+        /// Maximum horizontal speed cap for green square (also used for radial magnitude limiting).
         float GreenMaxHori = 10f;
-        float GreenMaxVert = 10f; 
-        float RedMaxHori = 10f;
-        float RedMaxVert = 10f;
+        /// Maximum vertical speed cap for green square.
+        float GreenMaxVert = 10f;
+        /// Maximum horizontal speed cap for red square.
+        float RedMaxHori = 11f;
+        /// Maximum vertical speed cap for red square.
+        float RedMaxVert = 11f;
 
-        //Variables for "powerups"
+        //Variables for "powerups" (point collectible)
+        /// Point collectible X position.
         float pointX, pointY;
+        /// Whether the point collectible is currently visible and active on screen.
         bool pointVisible = false;
+        /// Lifetime duration (in ticks) before point collectible automatically disappears (~5 seconds).
         float pointLifetime = 300; //ticks(roughly 5 seconds)
+        /// Countdown timer tracking remaining lifetime of visible point collectible.
         float pointTimer = 0;
+        /// Visual size in pixels for point collectible (also used for collision detection padding).
         int pelletSize = 10;
+        /// Delay (in ticks) before point respawns after being collected or timing out (~2 seconds).
         int pointRespawnDelay = 120;   // 2 seconds
+        /// Countdown timer for point respawn delay.
         int pointRespawnTimer = 0;
         bool pointGreen = false;
         bool pointRed = false;
 
         string score = "";
+        /// Green player's current score (collected points).
         int gScore;
+        /// Red player's current score (collected points).
         int rScore;
 
+        //Speed power-up state
+        /// Speed power-up X position on screen.
         float speedX, speedY;
+        /// Whether the speed power-up is currently visible and active.
         bool speedVisible = false;
+        /// Lifetime duration (in ticks) before speed power-up disappears if not collected (~5 seconds).
         float speedLifetime = 300; //ticks(roughly 5 seconds)
+        /// Duration (in ticks) that speed boost effect remains active on the affected player (~5.1 seconds).
         float playerEffectSpeed = 320; //ticks(roughly 5.1 seconds)  
-        float speedTimer = 0;   
+        /// Countdown timer for speed power-up visibility.
+        float speedTimer = 0;
+        /// Visual size in pixels for speed power-up.
         int speedSize = 10;
+        /// Delay (in ticks) before speed power-up respawns after being collected or timing out.
         int speedRespawnDelay = 450;   // 
+        /// Countdown timer for speed power-up respawn delay.
         int speedRespawnTimer = 0;
-        bool  speedGreen = false;
+        bool speedGreen = false;
         bool speedRed = false;
+        /// Whether any player currently has an active speed boost effect.
         bool speedActive = false;
 
+        //Ice power-up state (slows player acceleration)
+        /// Ice power-up X position on screen.
         float IceX, IceY;
+        /// Whether the ice power-up is currently visible and active.
         bool IceVisible = false;
+        /// Lifetime duration (in ticks) before ice power-up disappears if not collected (~5 seconds).
         float IceLifetime = 300; //ticks(roughly 5 seconds)
+        /// Duration (in ticks) that ice effect remains active on the affected player (~5.1 seconds).
         float playerEffectIce = 320; //ticks(roughly 5.1 seconds)  
+        /// Countdown timer for ice power-up visibility.
         float IceTimer = 0;
+        /// Visual size in pixels for ice power-up.
         int IceSize = 10;
+        /// Delay (in ticks) before ice power-up respawns after being collected or timing out.
         int IceRespawnDelay = 450;   // 
+        /// Countdown timer for ice power-up respawn delay.
         int IceRespawnTimer = 0;
         bool IceGreen = false;
         bool IceRed = false;
+        /// Whether any player currently has an active ice effect reducing their acceleration.
         bool IceActive = false;
+        /// Tracks which player (if any) is affected by ice: true=green, false=red.
         bool iceGreen = false;
 
-        bool AIEnabled = true;
+        /// Enables AI control for the red square to pursue the green square.
+        bool AIEnabled = false;
+
+        /// AI prediction horizon (in ticks) for calculating where green square will be. Adjustable via W/S keys.
+        private float predictionTime = 10f;
 
 
+        /// 
+        /// Initializes a new instance of the Form1 class.
+        /// Sets up event handlers, configures full-screen mode, initializes game objects, and positions both players.
+        /// 
         public Form1()
         {
             InitializeComponent();
 
             Win.TabStop = false;
             Restart.TabStop = false;
-            StartButton.TabStop = false;
             KeyDown += Form1_KeyDown;
             KeyUp += Form1_KeyUp;
-            
+
+            // Configure fullscreen borderless window
+            this.FormBorderStyle = FormBorderStyle.None; 
+            this.Bounds = Screen.PrimaryScreen.Bounds; 
+            this.TopMost = true;
+
             timer.Tick += timer_Tick;
             KeyPreview = true;
 
             Thread.Sleep(1000);
+            // Randomly place all three collectibles
             PlaceObjectRandomly(ref pointX, ref pointY);
             PlaceObjectRandomly(ref speedX, ref speedY);
             PlaceObjectRandomly(ref IceX, ref IceY);
 
+            // Initialize collectible visibility and timers
             pointVisible = true;
-            pointTimer = pointLifetime; 
+            pointTimer = pointLifetime;
             speedVisible = true;
             speedTimer = speedLifetime;
             IceVisible = true;
             IceTimer = IceLifetime;
 
+            // Randomly position both players at opposite sides of screen
             x1 = rand.Next(100, 400);
             y1 = rand.Next(100, 400);
             x2 = rand.Next(600, 1200);
@@ -131,6 +214,11 @@ namespace WindowsFormsApp1
 
         }
 
+        /// 
+        /// Overrides key input handling to ensure arrow keys are treated as game input rather than focus navigation.
+        /// 
+        /// <name="keyData">The key being queried.
+        /// <returns>True if the key is an arrow key (should be handled by game); otherwise base implementation.</returns>
         protected override bool IsInputKey(Keys keyData)
         {
             switch (keyData)
@@ -144,34 +232,75 @@ namespace WindowsFormsApp1
             return base.IsInputKey(keyData);
         }
 
+        /// 
+        /// Processes global command keys for fullscreen mode toggling (F11) and application exit (Escape).
+        /// 
+        /// <name="msg">The Windows message being processed.
+        /// <name="keyData">The key being processed.
+        /// <returns>True if the key was handled; false to continue propagating.</returns>
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            // Exit fullscreen and pause game
+            if (keyData == Keys.Escape)
+            {
+                this.FormBorderStyle = FormBorderStyle.Sizable;
+                this.WindowState = FormWindowState.Normal;
+                this.TopMost = false;
+                timer.Enabled = false;
+                return true;
+            }
+
+            // Enter fullscreen and resume game
+            if (keyData == Keys.F11)
+            {
+                this.FormBorderStyle = FormBorderStyle.None;
+                this.WindowState = FormWindowState.Maximized;
+                this.TopMost = true;
+                timer.Enabled = true;
+                return true;
+            }
+
+            return base.ProcessCmdKey(ref msg, keyData);
+        }
+    
+
+
+        /// 
+        /// Main game update loop invoked every timer tick (~60Hz).
+        /// Updates physics, applies power-ups, processes AI, checks win conditions, and triggers rendering.
+        /// 
         private void timer_Tick(object sender, EventArgs e)
         {
-            //call math for square speed, using passed variables to allow for more than one square
+            // Update green square: apply acceleration, friction, and boundary collision
             SpeedMathSquare(GreenAccel, ref Vert1, ref Hori1, friction1, ref x1, ref y1, UpDown, DownDown, LeftDown, RightDown);
+            // Constrain green square velocity to maximum speeds
             SpeedLimit(GreenMaxHori, ref Hori1, ref Vert1, GreenMaxVert);
 
-
+            // Update red square: apply acceleration, friction, and boundary collision
             SpeedMathSquare(RedAccell, ref Vert2, ref Hori2, friction2, ref x2, ref y2, WDown, SDown, ADown, DDown);
+            // Constrain red square velocity to maximum speeds
             SpeedLimit(RedMaxHori, ref Hori2, ref Vert2, RedMaxVert);
 
+            // Apply calculated velocities to position updates
             x1 += Hori1;
             y1 += Vert1;
 
             x2 += Hori2;
             y2 += Vert2;
 
+            // Process game logic: scoring, power-ups, AI, and rendering
             AddPoint();
             ApplySpeedBonus();
             ApplyIceEffect();
             AIMath();
             Invalidate();
-            //debug for positioning of squares
-            debugLabel.Text = $"G{x1}, {y1}\nR{x2}, {y2}\nPT{pointX}, {pointY}\n\n{gScore}         {rScore}";
+            
+            // Debug information display
+            debugLabel.Text = $"G{x1}, {y1}\nR{x2}, {y2}\nPT{pointX}, {pointY}\n  {predictionTime}\n{gScore}         {rScore}";
             debugLabel.Text += $"\nUp:{UpDown} Down:{DownDown} Left:{LeftDown} Right:{RightDown}";
             debugLabel.Text += $"\nx1:{x1} y1:{y1} H:{Hori1} V:{Vert1}";
 
-
-
+            // Check win conditions
             if (gScore >= 10)
             {
                 timer.Stop();
@@ -187,23 +316,39 @@ namespace WindowsFormsApp1
             }
         }
 
+        /// 
+        /// Handles the Win (start) button click event.
+        /// Hides the start UI and enables AI control for the red player.
+        /// 
         private void Win_Click(object sender, EventArgs e)
         {
-            gScore = 10;
+            Win.Visible = false;
+            AIEnabled = true;
+            Win.TabStop = false;
+            Restart.TabStop = false;
+
         }
 
+        /// 
+        /// Handles the Restart button click event.
+        /// Resets all game state, scores, positions, and velocities before restarting the game loop.
+        /// 
         private void Restart_Click(object sender, EventArgs e)
         {
+            // Reset scores and UI
             gScore = 0;
             rScore = 0;
             Restart.Visible = false;
             GreenVic.Visible = false;
             RedVic.Visible = false;
+            
+            // Reset all velocities to zero
             Hori1 = 0;
             Vert1 = 0;
             Hori2 = 0;
             Vert2 = 0;
 
+            // Randomly reposition both players
             x1 = rand.Next(100, 400);
             y1 = rand.Next(100, 400);
             x2 = rand.Next(600, 1200);
@@ -211,8 +356,13 @@ namespace WindowsFormsApp1
             timer.Start();
         }
 
+        /// 
+        /// Manages the point collectible lifecycle: visibility timeout, collision detection with both players,
+        /// score updates, and respawn timing.
+        /// 
         private void AddPoint()
         {
+            // Decrement visibility timer
             if (pointVisible)
             {
                 pointTimer--;
@@ -222,6 +372,7 @@ namespace WindowsFormsApp1
                 }
             }
 
+            // Check collision with green square
             if (pointVisible && Math.Abs(pointX - x1) < pelletSize + 10 && Math.Abs(pointY - y1) < pelletSize + 10)
             {
                 gScore++;
@@ -229,6 +380,7 @@ namespace WindowsFormsApp1
                 ScoreGreen.Text = gScore.ToString();
             }
 
+            // Check collision with red square
             if (pointVisible && Math.Abs(pointX - x2) < pelletSize + 10 && Math.Abs(pointY - y2) < pelletSize + 10)
             {
                 rScore++;
@@ -236,6 +388,7 @@ namespace WindowsFormsApp1
                 RedScore.Text = rScore.ToString();
             }
 
+            // Handle respawn timing when point is not visible
             if (!pointVisible)
             {
                 if (pointRespawnTimer >= 0)
@@ -244,6 +397,7 @@ namespace WindowsFormsApp1
                 }
                 else
                 {
+                    // Respawn point at random location
                     PlaceObjectRandomly(ref pointX, ref pointY);
                     pointVisible = true;
                     pointTimer = pointLifetime;
@@ -261,8 +415,14 @@ namespace WindowsFormsApp1
             Restart.TabStop = false;*/
         }
 
+        /// 
+        /// Manages ice power-up logic: collision detection, applying slow effect (reduced acceleration),
+        /// visual feedback via label color, effect timeout, and respawn timing.
+        /// Ice reduces acceleration from base values and persists for a duration.
+        /// 
         private void ApplyIceEffect()
         {
+            // Decrement visibility timer
             if (IceVisible)
             {
                 IceTimer--;
@@ -272,60 +432,63 @@ namespace WindowsFormsApp1
                 }
             }
 
-            // Green player collision
+            // Check collision with red square and apply ice effect
             if (IceVisible && Math.Abs(IceX - x2) < IceSize + 10 && Math.Abs(IceY - y2) < IceSize + 10)
             {
+                // Reduce green's acceleration (note: x2, y2 refers to red square; this affects green due to naming)
                 GreenAccel = 0.1f;
                 GreenMaxHori = 10f;
                 GreenMaxVert = 10f;
 
                 IceVisible = false;
-                ScoreGreen.BackColor = Color.LightBlue;
+                ScoreGreen.BackColor = Color.LightBlue;  // Visual feedback
                 iceGreen = true;
 
                 IceActive = true;
-                playerEffectIce = 320;
+                playerEffectIce = 320;  // Reset effect duration
             }
 
-            // Red player collision
+            // Check collision with green square and apply ice effect
             if (IceVisible && Math.Abs(IceX - x1) < IceSize + 10 && Math.Abs(IceY - y1) < IceSize + 10)
             {
+                // Reduce red's acceleration
                 RedAccell = 0.1f;
                 RedMaxHori = 10f;
                 RedMaxVert = 10f;
 
                 IceVisible = false;
-                RedScore.BackColor = Color.LightBlue;
+                RedScore.BackColor = Color.LightBlue;  // Visual feedback
                 iceGreen = false;
 
                 IceActive = true;
-                playerEffectIce = 320;
+                playerEffectIce = 320;  // Reset effect duration
             }
 
-            // Timer for effect
+            // Decrement effect timer and reset to normal when expired
             if (playerEffectIce > 0 && IceActive)
             {
                 playerEffectIce--;
             }
             else
             {
-                // Reset to normal
+                // Restore normal acceleration values
                 GreenAccel = 0.2f;
                 GreenMaxHori = 10f;
                 GreenMaxVert = 10f;
 
-                RedAccell = 0.2f;
-                RedMaxHori = 10f;
-                RedMaxVert = 10f;
+                RedAccell = 0.22f;
+                RedMaxHori = 11f;
+                RedMaxVert = 11f;
 
                 IceActive = false;
                 playerEffectIce = 320;
 
+                // Clear visual feedback
                 ScoreGreen.BackColor = Color.Black;
                 RedScore.BackColor = Color.Black;
             }
 
-            // Respawn logic
+            // Handle respawn timing when ice power-up is not visible
             if (!IceVisible)
             {
                 if (IceRespawnTimer >= 0)
@@ -334,6 +497,7 @@ namespace WindowsFormsApp1
                 }
                 else
                 {
+                    // Respawn ice power-up at random location
                     PlaceObjectRandomly(ref IceX, ref IceY);
                     IceVisible = true;
                     IceTimer = IceLifetime;
@@ -342,87 +506,131 @@ namespace WindowsFormsApp1
             }
         }
 
+        /// 
+        /// Keyboard press handler for runtime tuning of AI prediction parameter.
+        /// Press 'w' to increase prediction time (makes AI look further ahead).
+        /// Press 's' to decrease prediction time (makes AI less predictive).
+        /// 
+        private void Form1_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            switch (e.KeyChar)
+            {
+                case 'w':
+                    predictionTime += 0.5f;
+                    break;
+                case 's':
+                    predictionTime -= 0.5f;
+                    break;
+            }
+        }
 
+        /// 
+        /// Manages speed power-up logic: collision detection, applying acceleration/speed boost,
+        /// visual feedback via label color, effect timeout, and respawn timing.
+        /// Speed boosts increase acceleration and maximum velocity temporarily.
+        /// 
         private void ApplySpeedBonus()
         {
+            // Decrement visibility timer
+            if (speedVisible)
             {
-                if (speedVisible)
+                speedTimer--;
+                if (speedTimer <= 0)
                 {
-                    speedTimer--;
-                    if (speedTimer <= 0)
-                    {
-                        speedVisible = false;
-                    }
-                }
-
-                if (speedVisible && Math.Abs(speedX - x1) < speedSize + 10 && Math.Abs(speedY - y1) < speedSize + 10)
-                {
-                    GreenAccel = 0.4f;
-                    GreenMaxHori = 13f;
-                    GreenMaxVert = 13f;
                     speedVisible = false;
-                    ScoreGreen.BackColor = Color.Yellow;
-                    speedActive = true;
-                    playerEffectSpeed = 320;
                 }
+            }
 
-                if (speedVisible && Math.Abs(speedX - x2) < speedSize + 10 && Math.Abs(speedY - y2) < speedSize + 10)
-                {
-                    RedAccell = 0.4f;
-                    RedMaxHori = 13f;
-                    RedMaxVert = 13f;
-                    speedVisible = false;
-                    RedScore.BackColor = Color.Yellow;
-                    speedActive = true;
-                    playerEffectSpeed = 320;
-                }
+            // Check collision with green square and apply speed boost
+            if (speedVisible && Math.Abs(speedX - x1) < speedSize + 10 && Math.Abs(speedY - y1) < speedSize + 10)
+            {
+                // Increase green's acceleration and max speeds
+                GreenAccel = 0.4f;
+                GreenMaxHori = 13f;
+                GreenMaxVert = 13f;
+                speedVisible = false;
+                ScoreGreen.BackColor = Color.Yellow;  // Visual feedback
+                speedActive = true;
+                playerEffectSpeed = 320;  // Reset effect duration
+            }
 
-                if (playerEffectSpeed > 0 && speedActive)
+            // Check collision with red square and apply speed boost
+            if (speedVisible && Math.Abs(speedX - x2) < speedSize + 10 && Math.Abs(speedY - y2) < speedSize + 10)
+            {
+                // Increase red's acceleration and max speeds (slightly more than green)
+                RedAccell = 0.42f;
+                RedMaxHori = 14f;
+                RedMaxVert = 14f;
+                speedVisible = false;
+                RedScore.BackColor = Color.Yellow;  // Visual feedback
+                speedActive = true;
+                playerEffectSpeed = 320;  // Reset effect duration
+            }
+
+            // Decrement effect timer and reset to normal when expired
+            if (playerEffectSpeed > 0 && speedActive)
+            {
+                playerEffectSpeed--;
+            }
+            else
+            {
+                // Restore normal acceleration and speed values
+                GreenAccel = 0.2f;
+                GreenMaxHori = 10f;
+                GreenMaxVert = 10f;
+                RedAccell = 0.22f;
+                RedMaxHori = 11f;
+                RedMaxVert = 11f;
+                speedActive = false;
+                playerEffectSpeed = 320;
+
+                // Clear visual feedback
+                ScoreGreen.BackColor = Color.Black;
+                RedScore.BackColor = Color.Black;
+            }
+
+            // Handle respawn timing when speed power-up is not visible
+            if (!speedVisible)
+            {
+                if (speedRespawnTimer >= 0)
                 {
-                    playerEffectSpeed--;
+                    speedRespawnTimer--;
                 }
                 else
                 {
-                    // reset to normal
-                    GreenAccel = 0.2f;
-                    GreenMaxHori = 10f;
-                    GreenMaxVert = 10f;
-                    RedAccell = 0.2f;
-                    RedMaxHori = 10f;
-                    RedMaxVert = 10f;
-                    speedActive = false;
-                    playerEffectSpeed = 320;
-
-                    ScoreGreen.BackColor = Color.Black;
-                    RedScore.BackColor = Color.Black;
+                    // Respawn speed power-up at random location
+                    PlaceObjectRandomly(ref speedX, ref speedY);
+                    speedVisible = true;
+                    speedTimer = speedLifetime;
+                    speedRespawnTimer = speedRespawnDelay;
                 }
-                if (!speedVisible)
-                    {
-                        if (speedRespawnTimer >= 0)
-                        {
-                            speedRespawnTimer--;
-                        }
-                        else
-                        {
-                            PlaceObjectRandomly(ref speedX, ref speedY);
-                            speedVisible = true;
-                            speedTimer = speedLifetime;
-                            speedRespawnTimer = speedRespawnDelay;
-                        }
-                    }
-                }
-
             }
-        
+
+        }
+
+        /// 
+        /// Calculates and applies physics for a single square: acceleration from input, friction deceleration,
+        /// velocity clamping per-axis, boundary collision detection, and wall bounce with energy loss.
+        /// 
+        /// <name="acelerate"> acceleration applied per frame when input is active.
+        /// <name="vertical"> Reference to vertical velocity (Y component) to update.
+        /// <name="horizontal"> Reference to horizontal velocity (X component) to update.
+        /// <name="friction"> Magnitude of friction deceleration applied when no input is active in that axis.
+        /// <name="x"> Reference to X position; clamped to screen bounds and bounced.
+        /// <name="y"> Reference to Y position; clamped to screen bounds and bounced.
+        /// <name="Up"> Whether up input is active (decreases vertical velocity).
+        /// <name="Down"> Whether down input is active (increases vertical velocity).
+        /// <name="Left"> Whether left input is active (decreases horizontal velocity).
+        /// <name="Right"> Whether right input is active (increases horizontal velocity).
         private void SpeedMathSquare(float acelerate, ref float vertical, ref float horizontal, float friction, ref float x, ref float y, bool Up, bool Down, bool Left, bool Right)
         {
-            //apply speed
+            //apply acceleration when input is active
             if (Up) vertical -= acelerate;
             if (Down) vertical += acelerate;
             if (Left) horizontal -= acelerate;
             if (Right) horizontal += acelerate;
 
-            //apply friction
+            // Apply friction (deceleration) when no input is present in that axis
             if (!Up && !Down)
             {
                 if (vertical > 0)
@@ -433,7 +641,7 @@ namespace WindowsFormsApp1
                 {
                     vertical += friction;
                 }
-                //jitter/creep fix
+                // Jitter/creep fix: set to zero if very close to zero
                 if (Math.Abs(vertical) < 0.1f)
                     vertical = 0;
             }
@@ -448,75 +656,103 @@ namespace WindowsFormsApp1
                     horizontal += friction;
                 }
 
-                //jitter/creep fix
-                if(Math.Abs(horizontal) < 0.1f)
+                // Jitter/creep fix: set to zero if very close to zero
+                if (Math.Abs(horizontal) < 0.1f)
                     horizontal = 0;
             }
 
-            //Bounce square off walls when square location is out of bounds
-            /*if (x < 25) x = 25;
-            if (x > 1520) x = 1520;
-            if (y < 5) y = 5;
-            if (y > 790) y = 790;
-            if (x == 25 || x == 1520) horizontal = -horizontal * 0.8f;
-            if (y == 5 || y == 790) vertical = -vertical * 0.8f;*/
+            // Boundary collision: clamp position and bounce with energy loss
             if (x < 10) x = 10;
             if (x > this.ClientSize.Width) x = this.ClientSize.Width;
             if (y < 10) y = 10;
             if (y > this.ClientSize.Height) y = this.ClientSize.Height;
+            // Reverse velocity and apply 20% energy loss (0.8 multiplier)
             if (x == 10 || x == this.ClientSize.Width) horizontal = -horizontal * 0.8f;
             if (y == 10 || y == this.ClientSize.Height) vertical = -vertical * 0.8f;
             return;
         }
 
 
+        /// 
+        /// Simple predictive AI for the red square: calculates where the green square will be
+        /// at a predicted future time, then sets movement inputs (WASD flags) to move toward that position.
+        /// Prediction accuracy is adjustable via w/s keys during gameplay.
+        /// 
         private void AIMath()
         {
-            if (AIEnabled)
+            if (!AIEnabled) return;
+
+            // Predict green square's position at future time based on current velocity
+            float predictedX = x1 + Hori1 * predictionTime;
+            float predictedY = y1 + Vert1 * predictionTime;
+
+            // Set WASD flags to move red square toward predicted position
+            if (predictedX < x2)
             {
-                if (x1 < x2)
-                {
-                    ADown = true;
-                    DDown = false;
-                }
-                if (x1 > x2)
-                {
-                    DDown = true;
-                    ADown = false;
-                }
-                if (y1 < y2)
-                {
-                    WDown = true;
-                    SDown = false;
-                }
-                if (y1 > y2)
-                {
-                    SDown = true;
-                    WDown = false;
-                }
+                ADown = true;
+                DDown = false;
+            }
+            if (predictedX > x2)
+            {
+                DDown = true;
+                ADown = false;
+            }
+            if (predictedY < y2)
+            {
+                WDown = true;
+                SDown = false;
+            }
+            if (predictedY > y2)
+            {
+                SDown = true;
+                WDown = false;
             }
         }
 
+        /// 
+        /// Constrains velocity to configured maximum values: per-axis clamping and radial (vector magnitude) limiting.
+        /// Ensures neither component exceeds its per-axis maximum and the overall velocity vector
+        /// does not exceed the radial maximum while preserving movement direction.
+        /// 
+        /// <name= "maxHori" > Maximum magnitude for per-axis horizontal limit (also used for radial limit).
+        /// <name= "horizontal" > Reference to horizontal velocity component to constrain.
+        /// <name= "vertical" > Reference to vertical velocity component to constrain.
+        /// <name= "maxVert" > Maximum magnitude for per-axis vertical limit.
         private void SpeedLimit(float maxHori, ref float horizontal, ref float vertical, float maxVert)
         {
-            //Limit top speed (Having to use vector)
+            // Simple per-axis clamping
             if (horizontal > maxHori) horizontal = maxHori;
             if (horizontal < -maxHori) horizontal = -maxHori;
             if (vertical > maxVert) vertical = maxVert;
             if (vertical < -maxVert) vertical = -maxVert;
 
+            // Vector magnitude (radial) clamping to ensure overall velocity doesn't exceed limit
             if (Math.Sqrt(horizontal * horizontal + vertical * vertical) > maxHori)
             {
+                // Calculate angle of velocity vector
                 float angle = (float)Math.Atan2(vertical, horizontal);
+                // Redistribute velocity components along that angle at the maximum magnitude
                 horizontal = maxHori * (float)Math.Cos(angle);
-                vertical = maxHori * (float)Math.Sin(angle); ////////////////////////////PROBLEM CAUSED BY FIRST VERTICAL ON THE LINE BENG VERT1 FROM GREEN INSTAD OF UNIVERSAL PARAMTER
+                vertical = maxHori * (float)Math.Sin(angle);
             }
         }
+
+        /// 
+        /// Placeholder method for future player-to-player collision logic (not currently implemented).
+        /// 
+        private void PlayerCollision()
+        {
+            // Placeholder for player collision logic
+        }
+
+        /// 
+        /// Handles key release events for arrow key input.
+        /// Clears the corresponding key state flag when the key is released.
+        /// 
         private void Form1_KeyUp(object sender, KeyEventArgs e)
         {
             switch (e.KeyCode)
             {
-                // add boolean for each key condition
                 case Keys.Up:
                     UpDown = false;
                     break;
@@ -529,29 +765,17 @@ namespace WindowsFormsApp1
                 case Keys.Right:
                     RightDown = false;
                     break;
-                /*case Keys.W:
-                    WDown = false;
-                    break;
-                case Keys.S:
-                    SDown = false;
-                    break;
-                case Keys.A:
-                    ADown = false;
-                    break;
-                case Keys.D:
-                    DDown = false;
-                    break;*/
             }
-            //if (e.KeyCode == Keys.Up) UpDown = true;
-            //if (e.KeyCode == Keys.Down) DownDown = true;
-            //if (e.KeyCode == Keys.Left) LeftDown = true;
-            //if (e.KeyCode == Keys.Right) RightDown = true;
         }
 
+        /// 
+        /// Handles key press events for arrow key input.
+        /// Sets the corresponding key state flag when the key is first pressed.
+        /// 
         private void Form1_KeyDown(object sender, KeyEventArgs e)
         {
             switch (e.KeyCode)
-            { // add boolean for each key condition
+            {
                 case Keys.Up:
                     UpDown = true;
                     break;
@@ -564,72 +788,73 @@ namespace WindowsFormsApp1
                 case Keys.Right:
                     RightDown = true;
                     break;
-                /*case Keys.W:
-                    WDown = true;
-                    break;
-                case Keys.S:
-                    SDown = true;
-                    break;
-                case Keys.A:
-                    ADown = true;
-                    break;
-                case Keys.D:
-                    DDown = true;
-                    break;*/
             }
         }
 
+        /// 
+        /// Places an object at a random position within the client area, respecting a margin from edges.
+        /// Used for initial placement and respawning of collectibles.
+        /// 
+        /// <name="x"> Reference to X coordinate to be set.
+        /// <name="y"> Reference to Y coordinate to be set.
         private void PlaceObjectRandomly(ref float x, ref float y)
         {
             int margin = 40;
             x = rand.Next(margin, (this.ClientSize.Width - margin));
             y = rand.Next(margin, (this.ClientSize.Height - margin));
         }
+
+        /// 
+        /// Renders the game scene: collectibles (point, speed, ice) and both player squares.
+        /// Uses graphics transforms for positioning and applies visual effects based on active power-ups.
+        /// Called every frame via Invalidate().
+        /// 
         protected override void OnPaint(PaintEventArgs e)
         {
-            Color greenIce = Color.FromArgb(0, 200, 255);   // cyan‑ish green
-            Color redIce = Color.FromArgb(150, 80, 255);  // purple‑blue tint
+            // Define colors for ice effect visualization
+            Color greenIce = Color.FromArgb(0, 200, 255);   // cyan-ish
+            Color redIce = Color.FromArgb(150, 80, 255);    // purple-blue tint
 
             base.OnPaint(e);
 
             Graphics g = e.Graphics;
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
 
+            // Draw collectibles
             if (pointVisible) { g.FillRectangle(Brushes.White, pointX - pelletSize / 2, pointY - pelletSize / 2, pelletSize, pelletSize); }
             if (speedVisible) { g.FillRectangle(Brushes.Yellow, speedX - speedSize / 2, speedY - speedSize / 2, speedSize, speedSize); }
             if (IceVisible) { g.FillRectangle(Brushes.Blue, IceX - IceSize / 2, IceY - IceSize / 2, IceSize, IceSize); }
 
-            // sq1 (Green)
+            // Draw green square (sq1) with optional ice effect coloring
             g.TranslateTransform(x1, y1);
 
             if (IceActive)
             {
                 if (IceGreen)
-                    g.FillRectangle(new SolidBrush(greenIce), -10, -9, 20, 20);
+                    g.FillRectangle(new SolidBrush(greenIce), -10, -9, 20, 20);  // Affected by ice
                 else
-                    g.FillRectangle(Brushes.Lime, -10, -9, 20, 20);   // normal green
+                    g.FillRectangle(Brushes.Lime, -10, -9, 20, 20);              // Normal color
             }
             else
             {
-                g.FillRectangle(Brushes.Lime, -10, -9, 20, 20);
+                g.FillRectangle(Brushes.Lime, -10, -9, 20, 20);                  // Normal color
             }
 
             g.ResetTransform();
 
-
-            // sq2 (Red)
+            // Draw red square (sq2) with optional ice effect coloring
             g.TranslateTransform(x2, y2);
 
             if (IceActive)
             {
                 if (!IceGreen)
-                    g.FillRectangle(new SolidBrush(redIce), -10, -9, 20, 20);
+                    g.FillRectangle(new SolidBrush(redIce), -10, -9, 20, 20);    // Affected by ice
                 else
-                    g.FillRectangle(Brushes.MediumVioletRed, -10, -9, 20, 20);  // normal red
+                    g.FillRectangle(Brushes.MediumVioletRed, -10, -9, 20, 20);   // Normal color
             }
             else
             {
-                g.FillRectangle(Brushes.MediumVioletRed, -10, -9, 20, 20);
+                g.FillRectangle(Brushes.MediumVioletRed, -10, -9, 20, 20);       // Normal color
             }
 
             g.ResetTransform();

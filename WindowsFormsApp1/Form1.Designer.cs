@@ -37,7 +37,6 @@
             this.RedVic = new System.Windows.Forms.Label();
             this.Restart = new System.Windows.Forms.Button();
             this.Win = new System.Windows.Forms.Button();
-            this.StartButton = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // timer
@@ -71,7 +70,7 @@
             this.RedScore.AutoSize = true;
             this.RedScore.Font = new System.Drawing.Font("MS PGothic", 26.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.RedScore.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(192)))), ((int)(((byte)(192)))));
-            this.RedScore.Location = new System.Drawing.Point(1090, 11);
+            this.RedScore.Location = new System.Drawing.Point(1124, 13);
             this.RedScore.Name = "RedScore";
             this.RedScore.Size = new System.Drawing.Size(34, 35);
             this.RedScore.TabIndex = 2;
@@ -82,7 +81,7 @@
             this.GreenVic.AutoSize = true;
             this.GreenVic.Font = new System.Drawing.Font("MS PGothic", 48F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.GreenVic.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(255)))), ((int)(((byte)(192)))));
-            this.GreenVic.Location = new System.Drawing.Point(590, 323);
+            this.GreenVic.Location = new System.Drawing.Point(610, 328);
             this.GreenVic.Name = "GreenVic";
             this.GreenVic.Size = new System.Drawing.Size(413, 64);
             this.GreenVic.TabIndex = 3;
@@ -94,7 +93,7 @@
             this.RedVic.AutoSize = true;
             this.RedVic.Font = new System.Drawing.Font("MS PGothic", 48F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.RedVic.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(192)))), ((int)(((byte)(192)))));
-            this.RedVic.Location = new System.Drawing.Point(630, 323);
+            this.RedVic.Location = new System.Drawing.Point(650, 328);
             this.RedVic.Name = "RedVic";
             this.RedVic.Size = new System.Drawing.Size(332, 64);
             this.RedVic.TabIndex = 4;
@@ -106,7 +105,7 @@
             this.Restart.BackColor = System.Drawing.SystemColors.ActiveCaptionText;
             this.Restart.Font = new System.Drawing.Font("Microsoft Sans Serif", 21.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.Restart.ForeColor = System.Drawing.Color.White;
-            this.Restart.Location = new System.Drawing.Point(704, 478);
+            this.Restart.Location = new System.Drawing.Point(740, 476);
             this.Restart.Name = "Restart";
             this.Restart.Size = new System.Drawing.Size(177, 80);
             this.Restart.TabIndex = 5;
@@ -120,27 +119,13 @@
             this.Win.BackColor = System.Drawing.SystemColors.ActiveCaptionText;
             this.Win.Font = new System.Drawing.Font("Microsoft Sans Serif", 21.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.Win.ForeColor = System.Drawing.Color.White;
-            this.Win.Location = new System.Drawing.Point(166, 12);
+            this.Win.Location = new System.Drawing.Point(736, 343);
             this.Win.Name = "Win";
-            this.Win.Size = new System.Drawing.Size(74, 36);
+            this.Win.Size = new System.Drawing.Size(150, 49);
             this.Win.TabIndex = 6;
-            this.Win.Text = "Win";
+            this.Win.Text = "Start";
             this.Win.UseVisualStyleBackColor = false;
             this.Win.Click += new System.EventHandler(this.Win_Click);
-            // 
-            // StartButton
-            // 
-            this.StartButton.BackColor = System.Drawing.SystemColors.ActiveCaptionText;
-            this.StartButton.Font = new System.Drawing.Font("Microsoft Sans Serif", 21.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.StartButton.ForeColor = System.Drawing.Color.White;
-            this.StartButton.Location = new System.Drawing.Point(745, 340);
-            this.StartButton.Name = "StartButton";
-            this.StartButton.Size = new System.Drawing.Size(95, 47);
-            this.StartButton.TabIndex = 7;
-            this.StartButton.Text = "Start";
-            this.StartButton.UseVisualStyleBackColor = false;
-            this.StartButton.Visible = false;
-            this.StartButton.Click += new System.EventHandler(this.StartButton_Click);
             // 
             // Form1
             // 
@@ -148,7 +133,6 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.Black;
             this.ClientSize = new System.Drawing.Size(1504, 781);
-            this.Controls.Add(this.StartButton);
             this.Controls.Add(this.Win);
             this.Controls.Add(this.Restart);
             this.Controls.Add(this.RedVic);
@@ -161,6 +145,7 @@
             this.Name = "Form1";
             this.Text = "Form1";
             this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Form1_KeyDown);
+            this.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.Form1_KeyPress);
             this.KeyUp += new System.Windows.Forms.KeyEventHandler(this.Form1_KeyUp);
             this.ResumeLayout(false);
             this.PerformLayout();
@@ -177,7 +162,6 @@
         private System.Windows.Forms.Label RedVic;
         private System.Windows.Forms.Button Restart;
         private System.Windows.Forms.Button Win;
-        private System.Windows.Forms.Button StartButton;
     }
 }
 
