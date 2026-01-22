@@ -32,11 +32,11 @@
             this.timer = new System.Windows.Forms.Timer(this.components);
             this.debugLabel = new System.Windows.Forms.Label();
             this.ScoreGreen = new System.Windows.Forms.Label();
-            this.RedScore = new System.Windows.Forms.Label();
             this.GreenVic = new System.Windows.Forms.Label();
             this.RedVic = new System.Windows.Forms.Label();
             this.Restart = new System.Windows.Forms.Button();
             this.Win = new System.Windows.Forms.Button();
+            this.RedScore = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // timer
@@ -64,17 +64,6 @@
             this.ScoreGreen.Size = new System.Drawing.Size(34, 35);
             this.ScoreGreen.TabIndex = 1;
             this.ScoreGreen.Text = "0";
-            // 
-            // RedScore
-            // 
-            this.RedScore.AutoSize = true;
-            this.RedScore.Font = new System.Drawing.Font("MS PGothic", 26.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.RedScore.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(192)))), ((int)(((byte)(192)))));
-            this.RedScore.Location = new System.Drawing.Point(1124, 13);
-            this.RedScore.Name = "RedScore";
-            this.RedScore.Size = new System.Drawing.Size(34, 35);
-            this.RedScore.TabIndex = 2;
-            this.RedScore.Text = "0";
             // 
             // GreenVic
             // 
@@ -127,6 +116,17 @@
             this.Win.UseVisualStyleBackColor = false;
             this.Win.Click += new System.EventHandler(this.Win_Click);
             // 
+            // RedScore
+            // 
+            this.RedScore.AutoSize = true;
+            this.RedScore.Font = new System.Drawing.Font("MS PGothic", 26.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.RedScore.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(192)))), ((int)(((byte)(192)))));
+            this.RedScore.Location = new System.Drawing.Point(1395, 13);
+            this.RedScore.Name = "RedScore";
+            this.RedScore.Size = new System.Drawing.Size(83, 35);
+            this.RedScore.TabIndex = 2;
+            this.RedScore.Text = "RED";
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -157,11 +157,11 @@
         private System.Windows.Forms.Timer timer;
         private System.Windows.Forms.Label debugLabel;
         private System.Windows.Forms.Label ScoreGreen;
-        private System.Windows.Forms.Label RedScore;
         private System.Windows.Forms.Label GreenVic;
         private System.Windows.Forms.Label RedVic;
         private System.Windows.Forms.Button Restart;
         private System.Windows.Forms.Button Win;
+        private System.Windows.Forms.Label RedScore;
     }
 }
 

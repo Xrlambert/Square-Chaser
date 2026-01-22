@@ -32,6 +32,9 @@ using System;
 using System.Drawing;
 using System.Threading;
 using System.Windows.Forms;
+using System.Diagnostics;
+using System.IO;
+using System.Collections.Generic;
 
 namespace WindowsFormsApp1
 {
@@ -169,6 +172,18 @@ namespace WindowsFormsApp1
         /// AI prediction horizon (in ticks) for calculating where green square will be. Adjustable via W/S keys.
         private float predictionTime = 10f;
 
+        /// Stopwatch to track green square survival time from game start.
+        private Stopwatch survivalTimer = new Stopwatch();
+        
+
+        /// Number of lives remaining for green square before elimination.
+        private int greenLives = 2;
+
+        /// Size of collision detection radius for player-to-player collisions.
+        private int playerCollisionRadius = 15;
+
+        /// Tracks if green square has been eliminated.
+        private bool greenEliminated = false;
 
         /// 
         /// Initializes a new instance of the Form1 class.
@@ -177,6 +192,8 @@ namespace WindowsFormsApp1
         public Form1()
         {
             InitializeComponent();
+
+            survivalTimer.Stop();
 
             Win.TabStop = false;
             Restart.TabStop = false;
@@ -193,13 +210,10 @@ namespace WindowsFormsApp1
 
             Thread.Sleep(1000);
             // Randomly place all three collectibles
-            PlaceObjectRandomly(ref pointX, ref pointY);
             PlaceObjectRandomly(ref speedX, ref speedY);
             PlaceObjectRandomly(ref IceX, ref IceY);
 
             // Initialize collectible visibility and timers
-            pointVisible = true;
-            pointTimer = pointLifetime;
             speedVisible = true;
             speedTimer = speedLifetime;
             IceVisible = true;
@@ -211,14 +225,17 @@ namespace WindowsFormsApp1
             x2 = rand.Next(600, 1200);
             y2 = rand.Next(300, 600);
 
-
+            // Initialize green lives and survival timer
+            greenLives = 2;
+            greenEliminated = false;
+            survivalTimer.Reset();  // Reset but don't start yet
         }
 
         /// 
         /// Overrides key input handling to ensure arrow keys are treated as game input rather than focus navigation.
         /// 
-        /// <name="keyData">The key being queried.
-        /// <returns>True if the key is an arrow key (should be handled by game); otherwise base implementation.</returns>
+        /// <name= "keyData">\ The key being queried.
+        /// True if the key is an arrow key (should be handled by game); otherwise base implementation.
         protected override bool IsInputKey(Keys keyData)
         {
             switch (keyData)
@@ -234,6 +251,7 @@ namespace WindowsFormsApp1
 
         /// 
         /// Processes global command keys for fullscreen mode toggling (F11) and application exit (Escape).
+        /// Escape key pauses the game and shows the mouse cursor.
         /// 
         /// <name="msg">The Windows message being processed.
         /// <name="keyData">The key being processed.
@@ -247,6 +265,7 @@ namespace WindowsFormsApp1
                 this.WindowState = FormWindowState.Normal;
                 this.TopMost = false;
                 timer.Enabled = false;
+                Cursor.Show();  // Show mouse cursor when pausing
                 return true;
             }
 
@@ -257,6 +276,7 @@ namespace WindowsFormsApp1
                 this.WindowState = FormWindowState.Maximized;
                 this.TopMost = true;
                 timer.Enabled = true;
+                Cursor.Hide();  // Hide mouse cursor when resuming
                 return true;
             }
 
@@ -288,37 +308,35 @@ namespace WindowsFormsApp1
             x2 += Hori2;
             y2 += Vert2;
 
-            // Process game logic: scoring, power-ups, AI, and rendering
-            AddPoint();
+            // Process game logic: power-ups, AI, collision detection, and rendering
             ApplySpeedBonus();
             ApplyIceEffect();
+            PlayerCollision();  // Check for collision between squares
             AIMath();
             Invalidate();
             
+            // Update survival timer label
+            ScoreGreen.Text = $"SURVIVAL: {survivalTimer.Elapsed.TotalSeconds:F2}s | LIVES: {greenLives}";
+            
             // Debug information display
-            debugLabel.Text = $"G{x1}, {y1}\nR{x2}, {y2}\nPT{pointX}, {pointY}\n  {predictionTime}\n{gScore}         {rScore}";
+            debugLabel.Text = $"G{x1}, {y1}\nR{x2}, {y2}\n  {predictionTime}";
             debugLabel.Text += $"\nUp:{UpDown} Down:{DownDown} Left:{LeftDown} Right:{RightDown}";
             debugLabel.Text += $"\nx1:{x1} y1:{y1} H:{Hori1} V:{Vert1}";
+            debugLabel.Text += $"\nSurvival: {survivalTimer.Elapsed.TotalSeconds:F1}s | Green Lives: {greenLives}";
 
-            // Check win conditions
-            if (gScore >= 10)
+            // Check if green has been eliminated
+            if (greenEliminated)
             {
                 timer.Stop();
-                GreenVic.Visible = true;
-                Restart.Visible = true;
-            }
-
-            if (rScore >= 10)
-            {
-                timer.Stop();
-                RedVic.Visible = true;
+                survivalTimer.Stop();
+                MessageBox.Show($"Green Square Eliminated!\n\nSurvival Time: {survivalTimer.Elapsed.TotalSeconds:F2} seconds", "Game Over");
                 Restart.Visible = true;
             }
         }
 
         /// 
         /// Handles the Win (start) button click event.
-        /// Hides the start UI and enables AI control for the red player.
+        /// Hides the start UI, enables AI control for the red player, and hides the mouse cursor.
         /// 
         private void Win_Click(object sender, EventArgs e)
         {
@@ -326,12 +344,13 @@ namespace WindowsFormsApp1
             AIEnabled = true;
             Win.TabStop = false;
             Restart.TabStop = false;
-
+            survivalTimer.Restart();
+            Cursor.Hide();  // Hide mouse cursor during gameplay
         }
 
         /// 
         /// Handles the Restart button click event.
-        /// Resets all game state, scores, positions, and velocities before restarting the game loop.
+        /// Resets all game state, scores, positions, velocities, and survival tracking before restarting.
         /// 
         private void Restart_Click(object sender, EventArgs e)
         {
@@ -348,18 +367,27 @@ namespace WindowsFormsApp1
             Hori2 = 0;
             Vert2 = 0;
 
+            // Reset survival tracking and green lives
+            greenLives = 2;
+            greenEliminated = false;
+            survivalTimer.Restart();
+
             // Randomly reposition both players
             x1 = rand.Next(100, 400);
             y1 = rand.Next(100, 400);
             x2 = rand.Next(600, 1200);
             y2 = rand.Next(300, 600);
+            
+            Cursor.Hide();  // Hide mouse cursor during gameplay        
             timer.Start();
         }
 
         /// 
         /// Manages the point collectible lifecycle: visibility timeout, collision detection with both players,
         /// score updates, and respawn timing.
+        /// DEPRECATED: Point collection system removed. Kept for reference.
         /// 
+        /*
         private void AddPoint()
         {
             // Decrement visibility timer
@@ -406,14 +434,8 @@ namespace WindowsFormsApp1
             }
 
         }
+        */
 
-        private void StartButton_Click(object sender, EventArgs e)
-        {
-            /*StartButton.Visible = false;
-            AIEnabled = true;
-            Win.TabStop = false;
-            Restart.TabStop = false;*/
-        }
 
         /// 
         /// Manages ice power-up logic: collision detection, applying slow effect (reduced acceleration),
@@ -622,13 +644,13 @@ namespace WindowsFormsApp1
         /// <name="Down"> Whether down input is active (increases vertical velocity).
         /// <name="Left"> Whether left input is active (decreases horizontal velocity).
         /// <name="Right"> Whether right input is active (increases horizontal velocity).
-        private void SpeedMathSquare(float acelerate, ref float vertical, ref float horizontal, float friction, ref float x, ref float y, bool Up, bool Down, bool Left, bool Right)
+        private void SpeedMathSquare(float acelero, ref float vertical, ref float horizontal, float friction, ref float x, ref float y, bool Up, bool Down, bool Left, bool Right)
         {
             //apply acceleration when input is active
-            if (Up) vertical -= acelerate;
-            if (Down) vertical += acelerate;
-            if (Left) horizontal -= acelerate;
-            if (Right) horizontal += acelerate;
+            if (Up) vertical -= acelero;
+            if (Down) vertical += acelero;
+            if (Left) horizontal -= acelero;
+            if (Right) horizontal += acelero;
 
             // Apply friction (deceleration) when no input is present in that axis
             if (!Up && !Down)
@@ -738,11 +760,34 @@ namespace WindowsFormsApp1
         }
 
         /// 
-        /// Placeholder method for future player-to-player collision logic (not currently implemented).
+        /// Detects collision between the two player squares and handles green life loss.
+        /// Green square loses one life per collision with red square.
+        /// When green runs out of lives, the game ends and survival time is recorded.
         /// 
         private void PlayerCollision()
         {
-            // Placeholder for player collision logic
+            // Check if squares are colliding using distance-based collision detection
+            float distanceX = Math.Abs(x1 - x2);
+            float distanceY = Math.Abs(y1 - y2);
+            float distance = (float)Math.Sqrt(distanceX * distanceX + distanceY * distanceY);
+
+            // Collision occurs if distance is less than combined collision radius
+            if (distance < playerCollisionRadius * 2 && !greenEliminated)
+            {
+                // Green square loses one life on collision
+                greenLives--;
+
+                // Move red square away to prevent continuous collision
+                x2 += 50;
+                y2 += 50;
+
+                // Check if green has been eliminated
+                if (greenLives <= 0)
+                {
+                    greenEliminated = true;
+                    Cursor.Show();  // Show cursor on game over
+                }
+            }
         }
 
         /// 
@@ -805,8 +850,8 @@ namespace WindowsFormsApp1
         }
 
         /// 
-        /// Renders the game scene: collectibles (point, speed, ice) and both player squares.
-        /// Uses graphics transforms for positioning and applies visual effects based on active power-ups.
+        /// Renders the game scene: collectibles and both player squares.
+        /// Survival timer is displayed via label control at the top.
         /// Called every frame via Invalidate().
         /// 
         protected override void OnPaint(PaintEventArgs e)
@@ -820,9 +865,9 @@ namespace WindowsFormsApp1
             Graphics g = e.Graphics;
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
 
-            // Draw collectibles
-            if (pointVisible) { g.FillRectangle(Brushes.White, pointX - pelletSize / 2, pointY - pelletSize / 2, pelletSize, pelletSize); }
+            // Draw speed power-up
             if (speedVisible) { g.FillRectangle(Brushes.Yellow, speedX - speedSize / 2, speedY - speedSize / 2, speedSize, speedSize); }
+            // Draw ice power-up
             if (IceVisible) { g.FillRectangle(Brushes.Blue, IceX - IceSize / 2, IceY - IceSize / 2, IceSize, IceSize); }
 
             // Draw green square (sq1) with optional ice effect coloring
@@ -858,8 +903,6 @@ namespace WindowsFormsApp1
             }
 
             g.ResetTransform();
-
-
         }
     }
 }
