@@ -170,7 +170,7 @@ namespace WindowsFormsApp1
         bool AIEnabled = false;
 
         /// AI prediction horizon (in ticks) for calculating where green square will be. Adjustable via W/S keys.
-        private float predictionTime = 10f;
+        private float predictionTime = 7f;
 
         /// Stopwatch to track green square survival time from game start.
         private Stopwatch survivalTimer = new Stopwatch();
@@ -217,8 +217,19 @@ namespace WindowsFormsApp1
         private int aggressivePhase = 0;
         /// Duration of each phase (slow phase, then fast phase)
         private int phaseTickDuration = 75;
-        // 
 
+        bool debug = false;
+
+        /// Counter for idle detection checks (only every few frames)
+        private int idleCheckCounter = 0;
+        /// Check idle detection every this many frames (~0.5 sec around 30 frames)
+        private const int IDLE_CHECK_INTERVAL = 30;
+
+        /// Cached hearts display string to avoid rebuilding every frame
+        private string cachedHeartsDisplay = "❤ ❤ ❤";
+        /// Last greenLives value
+        private int lastCachedLives = 3;
+        // ====================================================================
         /// 
         /// Initializes a new instance of the Form1 class.
         /// Sets up event handlers, configures full-screen mode, initializes game objects, and positions both players.
@@ -269,6 +280,8 @@ namespace WindowsFormsApp1
             greenHistoryIndex = 0;
             redAggressive = false;
             // ==========================================================
+
+            debugLabel.Visible = false;
         }
 
         /// 
@@ -322,7 +335,7 @@ namespace WindowsFormsApp1
 
             return base.ProcessCmdKey(ref msg, keyData);
         }
-    
+
 
 
         /// 
@@ -348,24 +361,41 @@ namespace WindowsFormsApp1
             x2 += Hori2;
             y2 += Vert2;
 
+            // Check for idle player and trigger aggressive AI if needed
+            SitStill();
+            
             // Process game logic: power-ups, AI, collision detection, and rendering
             ApplySpeedBonus();
             ApplyIceEffect();
             PlayerCollision();  // Check for collision between squares
             AIMath();
             Invalidate();
-            
-            // Update life indicator label with heart characters
+
+            // Update life indicator label with heart characters (uses cached string)
             if (RedScore != null)
             {
                 RedScore.Text = GetLivesDisplay();
             }
-            
-            // Debug information display (can be hidden later)
-            debugLabel.Text = $"G{x1}, {y1}\nR{x2}, {y2}";
-            debugLabel.Text += $"\nUp:{UpDown} Down:{DownDown} Left:{LeftDown} Right:{RightDown}";
-            debugLabel.Text += $"\nx1:{x1} y1:{y1} H:{Hori1} V:{Vert1}";
-            debugLabel.Text += $"\nSurvival: {survivalTimer.Elapsed.TotalSeconds:F1}s | Aggressive: {redAggressive}";
+
+            // Display survival timer in ScoreGreen label (top-left)
+            if (ScoreGreen != null)
+            {
+                ScoreGreen.Text = $"⏱ {survivalTimer.Elapsed.TotalSeconds:F1}s";
+            }
+
+            // OPTIMIZATION: Only update debug label if in debug mode
+            if (debug)
+            {
+                debugLabel.Visible = true;
+                debugLabel.Text = $"G{x1}, {y1}\nR{x2}, {y2}";
+                debugLabel.Text += $"\nUp:{UpDown} Down:{DownDown} Left:{LeftDown} Right:{RightDown}";
+                debugLabel.Text += $"\nx1:{x1} y1:{y1} H:{Hori1} V:{Vert1}";
+                debugLabel.Text += $"\nAggressive: {redAggressive}";
+            }
+            else
+            {
+                debugLabel.Visible = false;
+            }
 
             // Check if green has been eliminated
             if (greenEliminated)
@@ -379,16 +409,25 @@ namespace WindowsFormsApp1
 
         /// <summary>
         /// Converts the current green lives count into a visual heart character display.
-        /// Returns a string of heart characters (❤) representing remaining lives.
+        /// Returns a cached string of heart characters (❤) representing remaining lives.
+        /// Only rebuilds cache when lives change to avoid string allocation every frame.
         /// </summary>
         private string GetLivesDisplay()
         {
-            string hearts = "";
-            for (int i = 0; i < greenLives; i++)
+            // OPTIMIZATION: Only rebuild hearts string if lives changed
+            if (greenLives != lastCachedLives)
             {
-                hearts += "❤ ";  // Heart character with spacing
+                lastCachedLives = greenLives;
+                
+                string hearts = "";
+                for (int i = 0; i < greenLives; i++)
+                {
+                    hearts += "❤ ";  // Heart character with spacing
+                }
+                cachedHeartsDisplay = hearts.Trim();  // Remove trailing space
             }
-            return hearts.Trim();  // Remove trailing space
+
+            return cachedHeartsDisplay;
         }
         /// <summary>
         /// Enters aggressive mode: red's speed caps are severely reduced to force green to move,
@@ -419,8 +458,7 @@ namespace WindowsFormsApp1
         private void SitStill()
         {
 
-            // 
-            // Store green's current position into history buffer
+            // Store green's current position into history buffer (always does this)
             greenPosHistoryX[greenHistoryIndex] = x1;
             greenPosHistoryY[greenHistoryIndex] = y1;
             greenHistoryIndex++;
@@ -430,9 +468,12 @@ namespace WindowsFormsApp1
                 greenHistoryFilled = true;
             }
 
-            // Once history is filled (~4 seconds), check if green has been idle
-            if (greenHistoryFilled)
+            // Check idle detection every few frames to reduce computation
+            idleCheckCounter++;
+            if (idleCheckCounter >= IDLE_CHECK_INTERVAL && greenHistoryFilled)
             {
+                idleCheckCounter = 0;
+
                 // FOR-LOOP: Iterate over entire history buffer to find max displacement
                 float maxDisplacement = 0f;
                 for (int i = 0; i < greenHistorySize; i++)
@@ -458,11 +499,10 @@ namespace WindowsFormsApp1
                 }
             }
 
-            // Handle aggressive mode: alternate between slow and fast phases to force green to move
+            // Handle aggressive mode: timer
             if (redAggressive)
             {
                 redAggressiveTimer--;
-
                 if (redAggressiveTimer <= 0)
                 {
                     ExitRedAggressiveMode();
