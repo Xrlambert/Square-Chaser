@@ -29,6 +29,7 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
             this.timer = new System.Windows.Forms.Timer(this.components);
             this.debugLabel = new System.Windows.Forms.Label();
             this.ScoreGreen = new System.Windows.Forms.Label();
@@ -37,6 +38,7 @@
             this.Restart = new System.Windows.Forms.Button();
             this.Win = new System.Windows.Forms.Button();
             this.RedScore = new System.Windows.Forms.Label();
+            this.tutorialLabel = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // timer
@@ -98,6 +100,7 @@
             this.Restart.Name = "Restart";
             this.Restart.Size = new System.Drawing.Size(177, 80);
             this.Restart.TabIndex = 5;
+            this.Restart.TabStop = false;
             this.Restart.Text = "Restart";
             this.Restart.UseVisualStyleBackColor = false;
             this.Restart.Visible = false;
@@ -108,10 +111,11 @@
             this.Win.BackColor = System.Drawing.SystemColors.ActiveCaptionText;
             this.Win.Font = new System.Drawing.Font("Microsoft Sans Serif", 21.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.Win.ForeColor = System.Drawing.Color.White;
-            this.Win.Location = new System.Drawing.Point(736, 343);
+            this.Win.Location = new System.Drawing.Point(733, 339);
             this.Win.Name = "Win";
             this.Win.Size = new System.Drawing.Size(150, 49);
             this.Win.TabIndex = 6;
+            this.Win.TabStop = false;
             this.Win.Text = "Start";
             this.Win.UseVisualStyleBackColor = false;
             this.Win.Click += new System.EventHandler(this.Win_Click);
@@ -127,6 +131,18 @@
             this.RedScore.TabIndex = 2;
             this.RedScore.Text = "RED";
             // 
+            // tutorialLabel
+            // 
+            this.tutorialLabel.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(50)))), ((int)(((byte)(50)))), ((int)(((byte)(50)))));
+            this.tutorialLabel.Font = new System.Drawing.Font("Arial", 14F);
+            this.tutorialLabel.ForeColor = System.Drawing.Color.White;
+            this.tutorialLabel.Location = new System.Drawing.Point(17, 16);
+            this.tutorialLabel.Name = "tutorialLabel";
+            this.tutorialLabel.Padding = new System.Windows.Forms.Padding(20);
+            this.tutorialLabel.Size = new System.Drawing.Size(1460, 729);
+            this.tutorialLabel.TabIndex = 7;
+            this.tutorialLabel.Text = resources.GetString("tutorialLabel.Text");
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -134,6 +150,7 @@
             this.BackColor = System.Drawing.Color.Black;
             this.ClientSize = new System.Drawing.Size(1504, 781);
             this.Controls.Add(this.Win);
+            this.Controls.Add(this.tutorialLabel);
             this.Controls.Add(this.Restart);
             this.Controls.Add(this.RedVic);
             this.Controls.Add(this.GreenVic);
@@ -162,6 +179,7 @@
         private System.Windows.Forms.Button Restart;
         private System.Windows.Forms.Button Win;
         private System.Windows.Forms.Label RedScore;
+        private System.Windows.Forms.Label tutorialLabel;
     }
 }
 

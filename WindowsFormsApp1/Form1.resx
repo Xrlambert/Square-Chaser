@@ -120,6 +120,39 @@
   <metadata name="timer.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>17, 17</value>
   </metadata>
+  <data name="tutorialLabel.Text" xml:space="preserve">
+    <value>HOW TO PLAY - SQUARE CHASER
+
+OBJECTIVE:
+Survive as long as possible while being chased by the AI-controlled red square.
+Each collision costs you 1 life (you have 2 lives).
+
+CONTROLS:
+↑ ↓ ← → Arrow Keys = Move GREEN square around the screen
+
+POWER-UPS:
+🟨 YELLOW = Speed Boost - Increases acceleration &amp; max speed for ~5 seconds
+🟦 BLUE = Ice Slow - Reduces opponent's acceleration for ~5 seconds
+
+GAMEPLAY MECHANICS:
+• Squares accelerate and decelerate with friction
+• Wall bounces lose 20% energy
+• Speed boost increases your max velocity to 13-14
+• Ice effect slows opponent's acceleration to 0.1
+• AI predicts your movement and intercepts your position
+
+TIPS:
+• Use power-ups strategically to evade or slow down the AI
+• Bounce off walls to change direction quickly
+• The longer you survive, the higher your score
+• Your survival time is recorded in the leaderboard
+
+UI SHORTCUTS:
+F11 = Toggle fullscreen (hides mouse)
+Esc = Exit fullscreen (shows mouse, pauses game)
+
+Click the START button below to begin!</value>
+  </data>
   <metadata name="$this.TrayHeight" type="System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
     <value>61</value>
   </metadata>

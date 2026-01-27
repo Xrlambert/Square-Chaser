@@ -185,6 +185,12 @@ namespace WindowsFormsApp1
         /// Tracks if green square has been eliminated.
         private bool greenEliminated = false;
 
+        /// Duration (in ticks) to display red flash on collision.
+        private int collisionFlashDuration = 0;
+
+        /// Maximum flash duration in ticks when collision occurs.
+        private const int FLASH_DURATION = 15;
+
         /// 
         /// Initializes a new instance of the Form1 class.
         /// Sets up event handlers, configures full-screen mode, initializes game objects, and positions both players.
@@ -195,18 +201,10 @@ namespace WindowsFormsApp1
 
             survivalTimer.Stop();
 
-            Win.TabStop = false;
-            Restart.TabStop = false;
-            KeyDown += Form1_KeyDown;
-            KeyUp += Form1_KeyUp;
-
             // Configure fullscreen borderless window
             this.FormBorderStyle = FormBorderStyle.None; 
             this.Bounds = Screen.PrimaryScreen.Bounds; 
             this.TopMost = true;
-
-            timer.Tick += timer_Tick;
-            KeyPreview = true;
 
             Thread.Sleep(1000);
             // Randomly place all three collectibles
@@ -787,6 +785,22 @@ namespace WindowsFormsApp1
                     greenEliminated = true;
                     Cursor.Show();  // Show cursor on game over
                 }
+                else
+                {
+                    // Flash red color on collision for visual feedback
+                    collisionFlashDuration = FLASH_DURATION;
+                    RedScore.BackColor = Color.Red;
+                }
+            }
+
+            // Handle collision flash effect duration
+            if (collisionFlashDuration > 0)
+            {
+                collisionFlashDuration--;
+                if (collisionFlashDuration == 0)
+                {
+                    RedScore.BackColor = Color.Black;  // Reset color after flash duration
+                }
             }
         }
 
@@ -851,57 +865,55 @@ namespace WindowsFormsApp1
 
         /// 
         /// Renders the game scene: collectibles and both player squares.
+        /// Displays collision flash effect with red overlay when collision occurs.
         /// Survival timer is displayed via label control at the top.
         /// Called every frame via Invalidate().
         /// 
         protected override void OnPaint(PaintEventArgs e)
         {
-            // Define colors for ice effect visualization
-            Color greenIce = Color.FromArgb(0, 200, 255);   // cyan-ish
-            Color redIce = Color.FromArgb(150, 80, 255);    // purple-blue tint
-
             base.OnPaint(e);
 
             Graphics g = e.Graphics;
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+
+            // Draw collision flash effect (red overlay)
+            if (collisionFlashDuration > 0)
+            {
+                int flashAlpha = (int)(255 * (collisionFlashDuration / (float)FLASH_DURATION));
+                Color flashColor = Color.FromArgb(flashAlpha, 255, 0, 0);
+                using (SolidBrush flashBrush = new SolidBrush(flashColor))
+                {
+                    g.FillRectangle(flashBrush, 0, 0, this.ClientSize.Width, this.ClientSize.Height);
+                }
+            }
 
             // Draw speed power-up
             if (speedVisible) { g.FillRectangle(Brushes.Yellow, speedX - speedSize / 2, speedY - speedSize / 2, speedSize, speedSize); }
             // Draw ice power-up
             if (IceVisible) { g.FillRectangle(Brushes.Blue, IceX - IceSize / 2, IceY - IceSize / 2, IceSize, IceSize); }
 
-            // Draw green square (sq1) with optional ice effect coloring
+            // Draw green square (sq1)
             g.TranslateTransform(x1, y1);
-
-            if (IceActive)
+            if (IceActive && IceGreen)
             {
-                if (IceGreen)
-                    g.FillRectangle(new SolidBrush(greenIce), -10, -9, 20, 20);  // Affected by ice
-                else
-                    g.FillRectangle(Brushes.Lime, -10, -9, 20, 20);              // Normal color
+                g.FillRectangle(Brushes.Cyan, -10, -9, 20, 20);  // Ice effect color
             }
             else
             {
-                g.FillRectangle(Brushes.Lime, -10, -9, 20, 20);                  // Normal color
+                g.FillRectangle(Brushes.Lime, -10, -9, 20, 20);  // Normal color
             }
-
             g.ResetTransform();
 
-            // Draw red square (sq2) with optional ice effect coloring
+            // Draw red square (sq2)
             g.TranslateTransform(x2, y2);
-
-            if (IceActive)
+            if (IceActive && !IceGreen)
             {
-                if (!IceGreen)
-                    g.FillRectangle(new SolidBrush(redIce), -10, -9, 20, 20);    // Affected by ice
-                else
-                    g.FillRectangle(Brushes.MediumVioletRed, -10, -9, 20, 20);   // Normal color
+                g.FillRectangle(Brushes.MediumSlateBlue, -10, -9, 20, 20);  // Ice effect color
             }
             else
             {
-                g.FillRectangle(Brushes.MediumVioletRed, -10, -9, 20, 20);       // Normal color
+                g.FillRectangle(Brushes.MediumVioletRed, -10, -9, 20, 20);  // Normal color
             }
-
             g.ResetTransform();
         }
     }
