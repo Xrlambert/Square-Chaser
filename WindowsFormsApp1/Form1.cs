@@ -35,6 +35,7 @@ using System.Windows.Forms;
 using System.Diagnostics;
 using System.IO;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace WindowsFormsApp1
 {
@@ -66,15 +67,15 @@ namespace WindowsFormsApp1
 
         //Acceleration
         /// Base acceleration for green square (increased by speed power-up or decreased by ice power-up).
-        float GreenAccel = 0.2f;
+        float GreenAccel = 0.4f;
         /// Base acceleration for red square (slightly higher than green).
-        float RedAccell = 0.22f;
+        float RedAccell = 0.44f;
 
         //Friction
         /// Friction applied to green square when no input is detected (slows movement).
-        float friction1 = 0.09f;
+        float friction1 = 0.18f;
         /// Friction applied to red square when no input is detected.
-        float friction2 = 0.11f;
+        float friction2 = 0.22f;
 
         //Forward/Backward Speed (velocity components)
         /// Green square horizontal velocity component (X-axis movement).
@@ -88,13 +89,13 @@ namespace WindowsFormsApp1
 
         //Max Speed
         /// Maximum horizontal speed cap for green square (also used for radial magnitude limiting).
-        float GreenMaxHori = 10f;
+        float GreenMaxHori = 20f;
         /// Maximum vertical speed cap for green square.
-        float GreenMaxVert = 10f;
+        float GreenMaxVert = 20f;
         /// Maximum horizontal speed cap for red square.
-        float RedMaxHori = 11f;
+        float RedMaxHori = 22f;
         /// Maximum vertical speed cap for red square.
-        float RedMaxVert = 11f;
+        float RedMaxVert = 22f;
 
         //Variables for "powerups" (point collectible)
         /// Point collectible X position.
@@ -172,10 +173,6 @@ namespace WindowsFormsApp1
         /// AI prediction horizon (in ticks) for calculating where green square will be. Adjustable via W/S keys.
         private float predictionTime = 7f;
 
-        /// Stopwatch to track green square survival time from game start.
-        private Stopwatch survivalTimer = new Stopwatch();
-        
-
         /// Number of lives remaining for green square before elimination.
         private int greenLives = 3;
 
@@ -238,8 +235,6 @@ namespace WindowsFormsApp1
         {
             InitializeComponent();
 
-            survivalTimer.Stop();
-
             // Configure fullscreen borderless window
             this.FormBorderStyle = FormBorderStyle.None; 
             this.Bounds = Screen.PrimaryScreen.Bounds; 
@@ -247,10 +242,13 @@ namespace WindowsFormsApp1
 
             Thread.Sleep(1000);
             // Randomly place all three collectibles
+            PlaceObjectRandomly(ref pointX, ref pointY);
             PlaceObjectRandomly(ref speedX, ref speedY);
             PlaceObjectRandomly(ref IceX, ref IceY);
 
             // Initialize collectible visibility and timers
+            pointVisible = true;
+            pointTimer = pointLifetime;
             speedVisible = true;
             speedTimer = speedLifetime;
             IceVisible = true;
@@ -262,24 +260,9 @@ namespace WindowsFormsApp1
             x2 = rand.Next(600, 1200);
             y2 = rand.Next(300, 600);
 
-            // Initialize green lives and survival timer
+            // Initialize green lives
             greenLives = 3;
             greenEliminated = false;
-            survivalTimer.Reset();  // Reset but don't start yet
-
-            // ===== Initialize history arrays for idle detection =====
-            greenPosHistoryX = new float[greenHistorySize];
-            greenPosHistoryY = new float[greenHistorySize];
-            // Initialize with starting position to avoid spurious movement detection
-            for (int i = 0; i < greenHistorySize; i++)
-            {
-                greenPosHistoryX[i] = x1;
-                greenPosHistoryY[i] = y1;
-            }
-            greenHistoryFilled = false;
-            greenHistoryIndex = 0;
-            redAggressive = false;
-            // ==========================================================
 
             debugLabel.Visible = false;
         }
@@ -361,36 +344,30 @@ namespace WindowsFormsApp1
             x2 += Hori2;
             y2 += Vert2;
 
-            // Check for idle player and trigger aggressive AI if needed
-            SitStill();
-            
-            // Process game logic: power-ups, AI, collision detection, and rendering
+            // Incrementally increase AI difficulty based on points collected
+            IncreaseAIDifficulty();
+
+            // Process game logic: points, power-ups, AI, collision detection, and rendering
+            AddPoint();
             ApplySpeedBonus();
             ApplyIceEffect();
-            PlayerCollision();  // Check for collision between squares
+            PlayerCollision();
             AIMath();
             Invalidate();
 
-            // Update life indicator label with heart characters (uses cached string)
-            if (RedScore != null)
-            {
-                RedScore.Text = GetLivesDisplay();
-            }
-
-            // Display survival timer in ScoreGreen label (top-left)
+            // Display score in ScoreGreen label (only if changed)
             if (ScoreGreen != null)
             {
-                ScoreGreen.Text = $"⏱ {survivalTimer.Elapsed.TotalSeconds:F1}s";
+                ScoreGreen.Text = $"POINTS: {gScore}";
             }
 
-            // OPTIMIZATION: Only update debug label if in debug mode
+            // Debug display
             if (debug)
             {
                 debugLabel.Visible = true;
-                debugLabel.Text = $"G{x1}, {y1}\nR{x2}, {y2}";
+                debugLabel.Text = $"AI Prediction: {predictionTime:F1}\nGreen Lives: {greenLives}";
                 debugLabel.Text += $"\nUp:{UpDown} Down:{DownDown} Left:{LeftDown} Right:{RightDown}";
                 debugLabel.Text += $"\nx1:{x1} y1:{y1} H:{Hori1} V:{Vert1}";
-                debugLabel.Text += $"\nAggressive: {redAggressive}";
             }
             else
             {
@@ -401,156 +378,110 @@ namespace WindowsFormsApp1
             if (greenEliminated)
             {
                 timer.Stop();
-                survivalTimer.Stop();
-                MessageBox.Show($"Green Square Eliminated!\n\nSurvival Time: {survivalTimer.Elapsed.TotalSeconds:F2} seconds", "Game Over");
+                
+                // Get and display top 10
+                string topTenDisplay = SaveScoreAndGetTopTen(gScore, greenLives);
+                leaderboardLabel.Text = topTenDisplay;
+                leaderboardLabel.Visible = true;
+                tutorialLabel.Visible = false;
+                
+                MessageBox.Show($"Game Over!\n\nPoints: {gScore}\nLeaderboard Updated", "Game Over");
                 Restart.Visible = true;
             }
         }
 
         /// <summary>
-        /// Converts the current green lives count into a visual heart character display.
-        /// Returns a cached string of heart characters (❤) representing remaining lives.
-        /// Only rebuilds cache when lives change to avoid string allocation every frame.
+        /// Saves score to leaderboard file and returns formatted top 10.
+        /// File location: %APPDATA%/SquareChaser/leaderboard.txt
         /// </summary>
-        private string GetLivesDisplay()
+        private string SaveScoreAndGetTopTen(int points, int livesRemaining)
         {
-            // OPTIMIZATION: Only rebuild hearts string if lives changed
-            if (greenLives != lastCachedLives)
+            string leaderboardFile = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "SquareChaser",
+                "leaderboard.txt"
+            );
+
+            try
             {
-                lastCachedLives = greenLives;
-                
-                string hearts = "";
-                for (int i = 0; i < greenLives; i++)
+                // Create directory if needed
+                string directory = Path.GetDirectoryName(leaderboardFile);
+                if (!Directory.Exists(directory))
                 {
-                    hearts += "❤ ";  // Heart character with spacing
+                    Directory.CreateDirectory(directory);
                 }
-                cachedHeartsDisplay = hearts.Trim();  // Remove trailing space
-            }
 
-            return cachedHeartsDisplay;
-        }
-        /// <summary>
-        /// Enters aggressive mode: red's speed caps are severely reduced to force green to move,
-        /// then boosted significantly to aggressively pursue.
-        /// Phase 0: Slow (punishment for idleness) - lasts phaseTickDuration ticks
-        /// Phase 1: Fast (aggressive chase) - lasts phaseTickDuration ticks
-        /// </summary>
-        private void EnterRedAggressiveMode()
-        {
-            if (redAggressive) return; // Already in aggressive mode
-            
-            redAggressive = true;
+                // Save new score (points only)
+                string entry = $"{points}|{DateTime.Now:yyyy-MM-dd HH:mm:ss}";
+                File.AppendAllText(leaderboardFile, entry + Environment.NewLine);
 
-            // Save normal stats
-            savedRedAccell = RedAccell;
-            savedRedMaxHori = RedMaxHori;
-            savedRedMaxVert = RedMaxVert;
-
-            // Start with SLOW phase (punish green for being idle)
-            aggressivePhase = 0;
-            RedAccell = 0.05f;           // Cripple acceleration
-            RedMaxHori = 1.5f;           // Reduce speed drastically (forces green to move or red will be very slow)
-            RedMaxVert = 1.5f;
-
-            redAggressiveTimer = phaseTickDuration * 2;  // Total time for both phases
-        }
-
-        private void SitStill()
-        {
-
-            // Store green's current position into history buffer (always does this)
-            greenPosHistoryX[greenHistoryIndex] = x1;
-            greenPosHistoryY[greenHistoryIndex] = y1;
-            greenHistoryIndex++;
-            if (greenHistoryIndex >= greenHistorySize)
-            {
-                greenHistoryIndex = 0;
-                greenHistoryFilled = true;
-            }
-
-            // Check idle detection every few frames to reduce computation
-            idleCheckCounter++;
-            if (idleCheckCounter >= IDLE_CHECK_INTERVAL && greenHistoryFilled)
-            {
-                idleCheckCounter = 0;
-
-                // FOR-LOOP: Iterate over entire history buffer to find max displacement
-                float maxDisplacement = 0f;
-                for (int i = 0; i < greenHistorySize; i++)
+                // Load all scores
+                var scores = new List<int>();
+                if (File.Exists(leaderboardFile))
                 {
-                    float dx = x1 - greenPosHistoryX[i];
-                    float dy = y1 - greenPosHistoryY[i];
-                    float distance = (float)Math.Sqrt(dx * dx + dy * dy);
-                    if (distance > maxDisplacement)
+                    foreach (string line in File.ReadAllLines(leaderboardFile))
                     {
-                        maxDisplacement = distance;
+                        if (string.IsNullOrWhiteSpace(line)) continue;
+                        string[] parts = line.Split('|');
+                        if (parts.Length >= 1 && int.TryParse(parts[0], out int p))
+                        {
+                            scores.Add(p);
+                        }
                     }
                 }
 
-                // If green hasn't moved more than ~20-30 pixels in 4 seconds, trigger aggressive mode
-                if (maxDisplacement < 25f)
+                // Sort and get top 10
+                var topTen = scores
+                    .OrderByDescending(s => s)
+                    .Take(10)
+                    .ToList();
+
+                // Format display
+                string display = "=== TOP 10 SCORES ===\n\n";
+                if (topTen.Count == 0)
                 {
-                    EnterRedAggressiveMode();
+                    display = "No scores yet!";
                 }
                 else
                 {
-                    // If green moved sufficiently, exit aggressive mode
-                    ExitRedAggressiveMode();
+                    for (int i = 0; i < topTen.Count; i++)
+                    {
+                        display += $"{i + 1}. {topTen[i]} pts\n";
+                    }
                 }
-            }
 
-            // Handle aggressive mode: timer
-            if (redAggressive)
+                return display;
+            }
+            catch (Exception ex)
             {
-                redAggressiveTimer--;
-                if (redAggressiveTimer <= 0)
-                {
-                    ExitRedAggressiveMode();
-                }
+                return $"Error loading leaderboard: {ex.Message}";
             }
-            // ===========================================================================
-
         }
 
+        /// Previous score to detect when difficulty should be recalculated
+        private int lastCalculatedScore = -1;
 
         /// <summary>
-        /// Exits aggressive mode and restores red's normal acceleration and speed caps.
+        /// Incrementally increases AI difficulty based on points collected.
+        /// Makes the game progressively harder as the player scores.
+        /// Only recalculates when score changes (optimization).
         /// </summary>
-        private void ExitRedAggressiveMode()
+        private void IncreaseAIDifficulty()
         {
-            if (!redAggressive) return;
+            // Only recalculate when score actually changes
+            if (gScore == lastCalculatedScore)
+                return;
+
+            lastCalculatedScore = gScore;
+
+            // Increase AI difficulty slowly: +5% per point
+            float difficultyMultiplier = 1.0f + (gScore * 0.05f);
             
-            redAggressive = false;
-
-            // Restore normal stats
-            RedAccell = savedRedAccell;
-            RedMaxHori = savedRedMaxHori;
-            RedMaxVert = savedRedMaxVert;
-
-            aggressivePhase = 0;
-            redAggressiveTimer = 0;
+            // Scale acceleration and max speeds based on score
+            RedAccell = 0.44f * difficultyMultiplier;
+            RedMaxHori = 22f * difficultyMultiplier;
+            RedMaxVert = 22f * difficultyMultiplier;
         }
-
-        /// <summary>
-        /// Updates aggressive mode phases: switches from SLOW (low speed cap) to FAST (high speed cap)
-        /// at the midpoint to force green into action or face a sudden aggressive chase.
-        /// This is called from ApplyIceEffect to integrate smoothly with power-up timing.
-        /// </summary>
-        private void UpdateAggressivePhase()
-        {
-            if (!redAggressive) return;
-
-            // Switch phases halfway through aggressive duration
-            if (redAggressiveTimer == phaseTickDuration)
-            {
-                // Switch to FAST phase: boost red's speed significantly to chase aggressively
-                aggressivePhase = 1;
-                RedAccell = savedRedAccell * 1.8f;      // Boost acceleration
-                RedMaxHori = savedRedMaxHori * 2.0f;    // Double top speed (very aggressive)
-                RedMaxVert = savedRedMaxVert * 2.0f;
-            }
-        }
-
         /// 
         /// Handles the Win (start) button click event.
         /// Hides the start UI, enables AI control for the red player, and hides the mouse cursor.
@@ -558,17 +489,17 @@ namespace WindowsFormsApp1
         private void Win_Click(object sender, EventArgs e)
         {
             Win.Visible = false;
+            tutorialLabel.Visible = false;
+            leaderboardLabel.Visible = false;
             AIEnabled = true;
             Win.TabStop = false;
             Restart.TabStop = false;
-            survivalTimer.Restart();
             Cursor.Hide();  // Hide mouse cursor during gameplay
-            tutorialLabel.Visible = false;
         }
 
         /// 
         /// Handles the Restart button click event.
-        /// Resets all game state, scores, positions, velocities, and survival tracking before restarting.
+        /// Resets all game state, scores, positions, velocities before restarting.
         /// 
         private void Restart_Click(object sender, EventArgs e)
         {
@@ -578,6 +509,8 @@ namespace WindowsFormsApp1
             Restart.Visible = false;
             GreenVic.Visible = false;
             RedVic.Visible = false;
+            leaderboardLabel.Visible = false;
+            tutorialLabel.Visible = true;
             
             // Reset all velocities to zero
             Hori1 = 0;
@@ -585,16 +518,28 @@ namespace WindowsFormsApp1
             Hori2 = 0;
             Vert2 = 0;
 
-            // Reset survival tracking and green lives
+            // Reset lives and AI difficulty
             greenLives = 3;
             greenEliminated = false;
-            survivalTimer.Restart();
+            predictionTime = 7f;
 
             // Randomly reposition both players
             x1 = rand.Next(100, 400);
             y1 = rand.Next(100, 400);
             x2 = rand.Next(600, 1200);
             y2 = rand.Next(300, 600);
+
+            // Randomly place collectibles
+            PlaceObjectRandomly(ref pointX, ref pointY);
+            PlaceObjectRandomly(ref speedX, ref speedY);
+            PlaceObjectRandomly(ref IceX, ref IceY);
+
+            pointVisible = true;
+            pointTimer = pointLifetime;
+            speedVisible = true;
+            speedTimer = speedLifetime;
+            IceVisible = true;
+            IceTimer = IceLifetime;
             
             Cursor.Hide();  // Hide mouse cursor during gameplay        
             timer.Start();
@@ -603,9 +548,7 @@ namespace WindowsFormsApp1
         /// 
         /// Manages the point collectible lifecycle: visibility timeout, collision detection with both players,
         /// score updates, and respawn timing.
-        /// DEPRECATED: Point collection system removed. Kept for reference.
         /// 
-        /*
         private void AddPoint()
         {
             // Decrement visibility timer
@@ -623,7 +566,6 @@ namespace WindowsFormsApp1
             {
                 gScore++;
                 pointVisible = false;
-                ScoreGreen.Text = gScore.ToString();
             }
 
             // Check collision with red square
@@ -631,7 +573,6 @@ namespace WindowsFormsApp1
             {
                 rScore++;
                 pointVisible = false;
-                RedScore.Text = rScore.ToString();
             }
 
             // Handle respawn timing when point is not visible
@@ -652,7 +593,6 @@ namespace WindowsFormsApp1
             }
 
         }
-        */
 
 
         /// 
@@ -662,9 +602,6 @@ namespace WindowsFormsApp1
         /// 
         private void ApplyIceEffect()
         {
-            // Update aggressive phase timing
-            UpdateAggressivePhase();
-
             // Decrement visibility timer
             if (IceVisible)
             {
@@ -678,14 +615,14 @@ namespace WindowsFormsApp1
             // Check collision with red square and apply ice effect
             if (IceVisible && Math.Abs(IceX - x2) < IceSize + 10 && Math.Abs(IceY - y2) < IceSize + 10)
             {
-                // Reduce green's acceleration
-                GreenAccel = 0.1f;
-                GreenMaxHori = 10f;
-                GreenMaxVert = 10f;
+                // Reduce red's acceleration
+                RedAccell = 0.1f;
+                RedMaxHori = 10f;
+                RedMaxVert = 10f;
 
                 IceVisible = false;
                 ScoreGreen.BackColor = Color.LightBlue;  // Visual feedback
-                iceGreen = true;
+                iceGreen = false;
 
                 IceActive = true;
                 playerEffectIce = 320;  // Reset effect duration
@@ -694,14 +631,14 @@ namespace WindowsFormsApp1
             // Check collision with green square and apply ice effect
             if (IceVisible && Math.Abs(IceX - x1) < IceSize + 10 && Math.Abs(IceY - y1) < IceSize + 10)
             {
-                // Reduce red's acceleration
-                RedAccell = 0.1f;
-                RedMaxHori = 10f;
-                RedMaxVert = 10f;
+                // Reduce green's acceleration
+                GreenAccel = 0.1f;
+                GreenMaxHori = 10f;
+                GreenMaxVert = 10f;
 
                 IceVisible = false;
-                RedScore.BackColor = Color.LightBlue;  // Visual feedback
-                iceGreen = false;
+                ScoreGreen.BackColor = Color.LightBlue;  // Visual feedback (both players show on same label)
+                iceGreen = true;
 
                 IceActive = true;
                 playerEffectIce = 320;  // Reset effect duration
@@ -728,7 +665,6 @@ namespace WindowsFormsApp1
 
                 // Clear visual feedback
                 ScoreGreen.BackColor = Color.Black;
-                RedScore.BackColor = Color.Black;
             }
 
             // Handle respawn timing when ice power-up is not visible
@@ -805,7 +741,7 @@ namespace WindowsFormsApp1
                 RedMaxHori = 14f;
                 RedMaxVert = 14f;
                 speedVisible = false;
-                RedScore.BackColor = Color.Yellow;  // Visual feedback
+                ScoreGreen.BackColor = Color.Yellow;  // Visual feedback (both players show on same label)
                 speedActive = true;
                 playerEffectSpeed = 320;  // Reset effect duration
             }
@@ -829,7 +765,6 @@ namespace WindowsFormsApp1
 
                 // Clear visual feedback
                 ScoreGreen.BackColor = Color.Black;
-                RedScore.BackColor = Color.Black;
             }
 
             // Handle respawn timing when speed power-up is not visible
@@ -873,7 +808,7 @@ namespace WindowsFormsApp1
             if (Left) horizontal -= acelero;
             if (Right) horizontal += acelero;
 
-            // Apply friction (deceleration) when no input is present in that axis
+            /// Apply friction (deceleration) when no input is present in that axis
             if (!Up && !Down)
             {
                 if (vertical > 0)
@@ -1012,7 +947,6 @@ namespace WindowsFormsApp1
                 {
                     // Flash red color on collision for visual feedback
                     collisionFlashDuration = FLASH_DURATION;
-                    RedScore.BackColor = Color.Red;
                 }
             }
 
@@ -1020,10 +954,6 @@ namespace WindowsFormsApp1
             if (collisionFlashDuration > 0)
             {
                 collisionFlashDuration--;
-                if (collisionFlashDuration == 0)
-                {
-                    RedScore.BackColor = Color.Black;  // Reset color after flash duration
-                }
             }
         }
 
@@ -1089,7 +1019,6 @@ namespace WindowsFormsApp1
         /// 
         /// Renders the game scene: collectibles and both player squares.
         /// Displays collision flash effect with red overlay when collision occurs.
-        /// Survival timer is displayed via label control at the top.
         /// Called every frame via Invalidate().
         /// 
         protected override void OnPaint(PaintEventArgs e)
@@ -1099,17 +1028,21 @@ namespace WindowsFormsApp1
             Graphics g = e.Graphics;
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
 
-            // Draw collision flash effect (red overlay)
+            // Draw collision flash effect (red overlay) - reuse color instead of creating new
             if (collisionFlashDuration > 0)
             {
                 int flashAlpha = (int)(255 * (collisionFlashDuration / (float)FLASH_DURATION));
-                Color flashColor = Color.FromArgb(flashAlpha, 255, 0, 0);
-                using (SolidBrush flashBrush = new SolidBrush(flashColor))
+                if (flashAlpha > 0)  // Only draw if visible
                 {
-                    g.FillRectangle(flashBrush, 0, 0, this.ClientSize.Width, this.ClientSize.Height);
+                    using (SolidBrush flashBrush = new SolidBrush(Color.FromArgb(flashAlpha, 255, 0, 0)))
+                    {
+                        g.FillRectangle(flashBrush, 0, 0, this.ClientSize.Width, this.ClientSize.Height);
+                    }
                 }
             }
 
+            // Draw point collectible
+            if (pointVisible) { g.FillRectangle(Brushes.White, pointX - pelletSize / 2, pointY - pelletSize / 2, pelletSize, pelletSize); }
             // Draw speed power-up
             if (speedVisible) { g.FillRectangle(Brushes.Yellow, speedX - speedSize / 2, speedY - speedSize / 2, speedSize, speedSize); }
             // Draw ice power-up
@@ -1117,26 +1050,12 @@ namespace WindowsFormsApp1
 
             // Draw green square (sq1)
             g.TranslateTransform(x1, y1);
-            if (IceActive && IceGreen)
-            {
-                g.FillRectangle(Brushes.Cyan, -10, -9, 20, 20);  // Ice effect color
-            }
-            else
-            {
-                g.FillRectangle(Brushes.Lime, -10, -9, 20, 20);  // Normal color
-            }
+            g.FillRectangle(IceActive && IceGreen ? Brushes.Cyan : Brushes.Lime, -10, -9, 20, 20);
             g.ResetTransform();
 
             // Draw red square (sq2)
             g.TranslateTransform(x2, y2);
-            if (IceActive && !IceGreen)
-            {
-                g.FillRectangle(Brushes.MediumSlateBlue, -10, -9, 20, 20);  // Ice effect color
-            }
-            else
-            {
-                g.FillRectangle(Brushes.MediumVioletRed, -10, -9, 20, 20);  // Normal color
-            }
+            g.FillRectangle(IceActive && !IceGreen ? Brushes.MediumSlateBlue : Brushes.MediumVioletRed, -10, -9, 20, 20);
             g.ResetTransform();
         }
     }
