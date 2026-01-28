@@ -124,28 +124,36 @@
     <value>HOW TO PLAY - SQUARE CHASER
 
 OBJECTIVE:
-Survive as long as possible while being chased by the AI-controlled red square.
-Each collision costs you 1 life (you have 2 lives).
+Collect white points while avoiding the AI-controlled red square.
+Each collision costs you 1 life (you start with 3 lives).
 
 CONTROLS:
 ↑ ↓ ← → Arrow Keys = Move GREEN square around the screen
 
-POWER-UPS:
+COLLECTIBLES:
+⬜ WHITE = Points - Collect to increase your score
 🟨 YELLOW = Speed Boost - Increases acceleration &amp; max speed for ~5 seconds
 🟦 BLUE = Ice Slow - Reduces opponent's acceleration for ~5 seconds
 
 GAMEPLAY MECHANICS:
-• Squares accelerate and decelerate with friction
+• Collect white squares to earn points
+• Each point increases red AI speed by 5% (game gets harder progressively)
+• Red AI gets faster and more aggressive as you score
 • Wall bounces lose 20% energy
-• Speed boost increases your max velocity to 13-14
-• Ice effect slows opponent's acceleration to 0.1
-• AI predicts your movement and intercepts your position
+• Speed boost increases your velocity significantly
+• Ice effect slows opponent's acceleration
+• AI predicts your movement and intercepts
+
+SCORING:
+• 1 point = +5% red AI speed
+• Survive longer and score more to reach the leaderboard
+• Your scores are saved automatically
 
 TIPS:
-• Use power-ups strategically to evade or slow down the AI
-• Bounce off walls to change direction quickly
-• The longer you survive, the higher your score
-• Your survival time is recorded in the leaderboard
+• Grab points quickly before AI catches up
+• Use power-ups strategically to escape danger
+• Bounce off walls to change direction unpredictably
+• Try to maintain at least 1 life to keep playing
 
 UI SHORTCUTS:
 F11 = Toggle fullscreen (hides mouse)

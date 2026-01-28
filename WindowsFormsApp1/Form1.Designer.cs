@@ -37,8 +37,9 @@
             this.RedVic = new System.Windows.Forms.Label();
             this.Restart = new System.Windows.Forms.Button();
             this.Win = new System.Windows.Forms.Button();
+            this.leaderboardLabel = new System.Windows.Forms.Label();
             this.tutorialLabel = new System.Windows.Forms.Label();
-            this.LeaderboardLabel = new System.Windows.Forms.Label();
+            this.leaderboard = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // timer
@@ -120,77 +121,41 @@
             this.Win.UseVisualStyleBackColor = false;
             this.Win.Click += new System.EventHandler(this.Win_Click);
             // 
-            // tutorialLabel
-            // 
-            this.tutorialLabel.AutoSize = false;
-            this.tutorialLabel.Width = 1460;
-            this.tutorialLabel.Height = 630;
-            this.tutorialLabel.Left = 20;
-            this.tutorialLabel.Top = 20;
-            this.tutorialLabel.BackColor = System.Drawing.Color.FromArgb(50, 50, 50);
-            this.tutorialLabel.ForeColor = System.Drawing.Color.White;
-            this.tutorialLabel.TextAlign = System.Drawing.ContentAlignment.TopLeft;
-            this.tutorialLabel.Padding = new System.Windows.Forms.Padding(20);
-            this.tutorialLabel.Font = new System.Drawing.Font("Arial", 14, System.Drawing.FontStyle.Regular);
-            this.tutorialLabel.Text = @"HOW TO PLAY - SQUARE CHASER
-
-OBJECTIVE:
-Collect white points while avoiding the AI-controlled red square.
-Each collision costs you 1 life (you start with 3 lives).
-
-CONTROLS:
-↑ ↓ ← → Arrow Keys = Move GREEN square around the screen
-
-COLLECTIBLES:
-⬜ WHITE = Points - Collect to increase your score
-🟨 YELLOW = Speed Boost - Increases acceleration & max speed for ~5 seconds
-🟦 BLUE = Ice Slow - Reduces opponent's acceleration for ~5 seconds
-
-GAMEPLAY MECHANICS:
-• Collect white squares to earn points
-• Each point increases red AI speed by 5% (game gets harder progressively)
-• Red AI gets faster and more aggressive as you score
-• Wall bounces lose 20% energy
-• Speed boost increases your velocity significantly
-• Ice effect slows opponent's acceleration
-• AI predicts your movement and intercepts
-
-SCORING:
-• 1 point = +5% red AI speed
-• Survive longer and score more to reach the leaderboard
-• Your scores are saved automatically
-
-TIPS:
-• Grab points quickly before AI catches up
-• Use power-ups strategically to escape danger
-• Bounce off walls to change direction unpredictably
-• Try to maintain at least 1 life to keep playing
-
-UI SHORTCUTS:
-F11 = Toggle fullscreen (hides mouse)
-Esc = Exit fullscreen (shows mouse, pauses game)
-
-Click the START button below to begin!";
-            this.tutorialLabel.Name = "tutorialLabel";
-            this.tutorialLabel.TabIndex = 7;
-            // 
             // leaderboardLabel
             // 
-            this.leaderboardLabel = new System.Windows.Forms.Label();
-            this.leaderboardLabel.AutoSize = false;
-            this.leaderboardLabel.Width = 720;
-            this.leaderboardLabel.Height = 630;
-            this.leaderboardLabel.Left = 760;
-            this.leaderboardLabel.Top = 20;
-            this.leaderboardLabel.BackColor = System.Drawing.Color.FromArgb(50, 50, 50);
+            this.leaderboardLabel.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(50)))), ((int)(((byte)(50)))), ((int)(((byte)(50)))));
+            this.leaderboardLabel.Font = new System.Drawing.Font("Arial", 12F);
             this.leaderboardLabel.ForeColor = System.Drawing.Color.Cyan;
-            this.leaderboardLabel.TextAlign = System.Drawing.ContentAlignment.TopLeft;
-            this.leaderboardLabel.Padding = new System.Windows.Forms.Padding(20);
-            this.leaderboardLabel.Font = new System.Drawing.Font("Arial", 12, System.Drawing.FontStyle.Regular);
-            this.leaderboardLabel.Text = "Loading leaderboard...";
+            this.leaderboardLabel.Location = new System.Drawing.Point(760, 20);
             this.leaderboardLabel.Name = "leaderboardLabel";
+            this.leaderboardLabel.Padding = new System.Windows.Forms.Padding(20);
+            this.leaderboardLabel.Size = new System.Drawing.Size(720, 630);
             this.leaderboardLabel.TabIndex = 8;
+            this.leaderboardLabel.Text = "Loading leaderboard...";
             this.leaderboardLabel.Visible = false;
+            // 
+            // tutorialLabel
+            // 
+            this.tutorialLabel.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(50)))), ((int)(((byte)(50)))), ((int)(((byte)(50)))));
+            this.tutorialLabel.Font = new System.Drawing.Font("Arial", 14F);
+            this.tutorialLabel.ForeColor = System.Drawing.Color.White;
+            this.tutorialLabel.Location = new System.Drawing.Point(5, 5);
+            this.tutorialLabel.Name = "tutorialLabel";
+            this.tutorialLabel.Padding = new System.Windows.Forms.Padding(20);
+            this.tutorialLabel.Size = new System.Drawing.Size(1460, 1000);
+            this.tutorialLabel.TabIndex = 7;
+            this.tutorialLabel.Text = resources.GetString("tutorialLabel.Text");
+            // 
+            // leaderboard
+            // 
+            this.leaderboard.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(50)))), ((int)(((byte)(50)))), ((int)(((byte)(50)))));
+            this.leaderboard.Font = new System.Drawing.Font("Arial", 14F);
+            this.leaderboard.ForeColor = System.Drawing.Color.White;
+            this.leaderboard.Location = new System.Drawing.Point(926, 13);
+            this.leaderboard.Name = "leaderboard";
+            this.leaderboard.Padding = new System.Windows.Forms.Padding(20);
+            this.leaderboard.Size = new System.Drawing.Size(517, 731);
+            this.leaderboard.TabIndex = 8;
             // 
             // Form1
             // 
@@ -199,8 +164,9 @@ Click the START button below to begin!";
             this.BackColor = System.Drawing.Color.Black;
             this.ClientSize = new System.Drawing.Size(1504, 781);
             this.Controls.Add(this.Win);
-            this.Controls.Add(this.tutorialLabel);
             this.Controls.Add(this.Restart);
+            this.Controls.Add(this.leaderboard);
+            this.Controls.Add(this.tutorialLabel);
             this.Controls.Add(this.RedVic);
             this.Controls.Add(this.GreenVic);
             this.Controls.Add(this.ScoreGreen);
@@ -226,9 +192,9 @@ Click the START button below to begin!";
         private System.Windows.Forms.Label RedVic;
         private System.Windows.Forms.Button Restart;
         private System.Windows.Forms.Button Win;
-        private System.Windows.Forms.Label tutorialLabel;
-        private System.Windows.Forms.Label LeaderboardLabel;
         private System.Windows.Forms.Label leaderboardLabel;
+        private System.Windows.Forms.Label tutorialLabel;
+        private System.Windows.Forms.Label leaderboard;
     }
 }
 

@@ -118,8 +118,6 @@ namespace WindowsFormsApp1
         string score = "";
         /// Green player's current score (collected points).
         int gScore;
-        /// Red player's current score (collected points).
-        int rScore;
 
         //Speed power-up state
         /// Speed power-up X position on screen.
@@ -381,12 +379,13 @@ namespace WindowsFormsApp1
                 
                 // Get and display top 10
                 string topTenDisplay = SaveScoreAndGetTopTen(gScore, greenLives);
-                leaderboardLabel.Text = topTenDisplay;
-                leaderboardLabel.Visible = true;
+                leaderboard.Text = topTenDisplay;
+                leaderboard.Visible = true;
                 tutorialLabel.Visible = false;
                 
                 MessageBox.Show($"Game Over!\n\nPoints: {gScore}\nLeaderboard Updated", "Game Over");
                 Restart.Visible = true;
+                tutorialLabel.Visible = true;
             }
         }
 
@@ -464,6 +463,7 @@ namespace WindowsFormsApp1
         /// <summary>
         /// Incrementally increases AI difficulty based on points collected.
         /// Makes the game progressively harder as the player scores.
+        /// Uses non-linear scaling: fast early, slower late.
         /// Only recalculates when score changes (optimization).
         /// </summary>
         private void IncreaseAIDifficulty()
@@ -474,8 +474,10 @@ namespace WindowsFormsApp1
 
             lastCalculatedScore = gScore;
 
-            // Increase AI difficulty slowly: +5% per point
-            float difficultyMultiplier = 1.0f + (gScore * 0.05f);
+            // Non-linear scaling: increases fast early, slower later
+            // Uses square root to create diminishing returns
+            float difficultyMultiplier = 1.0f + (float)Math.Sqrt(gScore) * 0.12f;
+            difficultyMultiplier = Math.Min(difficultyMultiplier, 1.65f);  // Cap at 1.65x
             
             // Scale acceleration and max speeds based on score
             RedAccell = 0.44f * difficultyMultiplier;
@@ -490,7 +492,7 @@ namespace WindowsFormsApp1
         {
             Win.Visible = false;
             tutorialLabel.Visible = false;
-            leaderboardLabel.Visible = false;
+            leaderboard.Visible = false;
             AIEnabled = true;
             Win.TabStop = false;
             Restart.TabStop = false;
@@ -505,13 +507,12 @@ namespace WindowsFormsApp1
         {
             // Reset scores and UI
             gScore = 0;
-            rScore = 0;
             Restart.Visible = false;
             GreenVic.Visible = false;
             RedVic.Visible = false;
-            leaderboardLabel.Visible = false;
-            tutorialLabel.Visible = true;
-            
+            leaderboard.Visible = false;
+            tutorialLabel.Visible = false;
+
             // Reset all velocities to zero
             Hori1 = 0;
             Vert1 = 0;
@@ -521,7 +522,7 @@ namespace WindowsFormsApp1
             // Reset lives and AI difficulty
             greenLives = 3;
             greenEliminated = false;
-            predictionTime = 7f;
+            predictionTime = 4f;
 
             // Randomly reposition both players
             x1 = rand.Next(100, 400);
@@ -569,11 +570,11 @@ namespace WindowsFormsApp1
             }
 
             // Check collision with red square
-            if (pointVisible && Math.Abs(pointX - x2) < pelletSize + 10 && Math.Abs(pointY - y2) < pelletSize + 10)
+            /*if (pointVisible && Math.Abs(pointX - x2) < pelletSize + 10 && Math.Abs(pointY - y2) < pelletSize + 10)
             {
                 rScore++;
                 pointVisible = false;
-            }
+            }*/
 
             // Handle respawn timing when point is not visible
             if (!pointVisible)
@@ -933,9 +934,22 @@ namespace WindowsFormsApp1
                 // Green square loses one life on collision
                 greenLives--;
 
-                // Move red square away to prevent continuous collision
-                x2 += 50;
-                y2 += 50;
+                // Move red square away from green to prevent continuous collision
+                float dx = x2 - x1;  // distance of green from red
+                float dy = y2 - y1;
+                float mag = (float)Math.Sqrt(dx * dx + dy * dy);
+
+                if (mag > 0.01f)  // Avoid division by zero
+                {
+                    // Normalize and move away from green
+                    float moveDistance = 100f;
+                    x2 += (dx / mag) * moveDistance;
+                    y2 += (dy / mag) * moveDistance;
+                }
+
+                // Keep to screen bounds to keep red in bounds
+                x2 = Math.Max(10, Math.Min(x2, this.ClientSize.Width - 10));
+                y2 = Math.Max(10, Math.Min(y2, this.ClientSize.Height - 10));
 
                 // Check if green has been eliminated
                 if (greenLives <= 0)
